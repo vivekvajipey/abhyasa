@@ -221,35 +221,51 @@ export default function SectionClient({
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 border-3 border-sage border-t-transparent rounded-full animate-spin" />
+          <span className="text-gray-600">Loading your problems...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Link
-          href={`/dashboard/curriculum/${curriculumId}`}
-          className="text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          ← Back to Chapters
-        </Link>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">{sectionName}</h2>
-          <p className="text-sm text-gray-600">{curriculumName}</p>
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Link
+            href={`/dashboard/curriculum/${curriculumId}`}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors group"
+          >
+            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Back to Chapters</span>
+          </Link>
+        </div>
+        <div className="text-right">
+          <h2 className="text-3xl font-quicksand font-bold gradient-text">{sectionName}</h2>
+          <p className="text-gray-600 mt-1">{curriculumName}</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {problems
           .filter(p => !p.parent_problem_id) // Show only parent problems first
           .sort((a, b) => a.problem_number - b.problem_number)
-          .map((problem) => {
+          .map((problem, index) => {
             const state = problemStates[problem.id] || {}
             const hints = problemHints[problem.id] || []
             const variants = problems.filter(p => p.parent_problem_id === problem.id)
             
             return (
-              <div key={problem.id} className="space-y-2">
+              <div 
+                key={problem.id} 
+                className="space-y-3 animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <ProblemTracker
                   problem={{
                     id: problem.id,
@@ -302,19 +318,54 @@ export default function SectionClient({
           })}
       </div>
 
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h3 className="font-medium text-gray-900 mb-2">Progress Summary</h3>
-        <div className="space-y-1 text-sm text-gray-600">
-          <p>
-            Total problems: {problems.length} 
-            ({problems.filter(p => p.generated).length} generated)
-          </p>
-          <p>
-            Completed: {Object.values(problemStates).filter((s: any) => s.completed).length}
-          </p>
-          <p>
-            Flagged for review: {Object.values(problemStates).filter((s: any) => s.flagged_for_review).length}
-          </p>
+      <div className="mt-12 p-8 bg-gradient-to-br from-sage/10 to-sky/10 rounded-3xl">
+        <h3 className="font-quicksand font-semibold text-xl text-gray-800 mb-4">Your Progress</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-sage/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-sage-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{problems.length}</p>
+                <p className="text-sm text-gray-600">Total Problems</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-sky/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-sky-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {Object.values(problemStates).filter((s: any) => s.completed).length}
+                </p>
+                <p className="text-sm text-gray-600">Completed</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-coral/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-coral-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {Object.values(problemStates).filter((s: any) => s.flagged_for_review).length}
+                </p>
+                <p className="text-sm text-gray-600">Flagged</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

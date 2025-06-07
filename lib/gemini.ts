@@ -56,8 +56,8 @@ SOLUTION: [step-by-step solution]`
     const text = response.text()
     
     // Parse the response
-    const problemMatch = text.match(/PROBLEM:\s*(.+?)(?=SOLUTION:|$)/s)
-    const solutionMatch = text.match(/SOLUTION:\s*(.+)/s)
+    const problemMatch = text.match(/PROBLEM:\s*([\s\S]+?)(?=SOLUTION:|$)/)
+    const solutionMatch = text.match(/SOLUTION:\s*([\s\S]+)/)
     
     return {
       content: problemMatch ? problemMatch[1].trim() : 'Unable to generate problem',

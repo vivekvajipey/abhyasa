@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       copiedPages.forEach(page => newPdfDoc.addPage(page))
       
       // Get the new PDF data
-      pdfData = await newPdfDoc.save()
+      pdfData = Buffer.from(await newPdfDoc.save())
     }
 
     // Check size after extraction (20MB limit for Gemini)
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       model: 'gemini-2.5-flash-preview-05-20',
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: curriculumExtractionSchema,
+        responseSchema: curriculumExtractionSchema as any,
       }
     })
 

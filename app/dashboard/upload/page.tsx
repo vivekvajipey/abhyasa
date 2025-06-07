@@ -94,70 +94,86 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Upload Curriculum</h2>
-          <p className="text-gray-600 mt-2">Extract problems and sections from PDF textbooks</p>
+          <h2 className="text-4xl font-quicksand font-bold gradient-text">Upload Curriculum</h2>
+          <p className="text-gray-700 text-lg mt-2">Extract problems and sections from PDF textbooks</p>
         </div>
         <Link
           href="/dashboard"
-          className="text-gray-500 hover:text-gray-700 transition-colors"
+          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors group"
         >
-          ← Back to Dashboard
+          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>Back to Dashboard</span>
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-light p-8">
         <PdfUpload onUpload={handlePdfUpload} />
 
         {isProcessing && (
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-blue-700">
-              Processing PDF... This may take a moment.
-              {currentPageRange && (
-                <span className="block mt-1 text-sm">
-                  Extracting pages {currentPageRange.start} to {currentPageRange.end}
-                </span>
-              )}
-            </p>
+          <div className="mt-6 p-6 bg-gradient-to-br from-sky/20 to-sky/10 rounded-2xl animate-fade-in">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 border-3 border-sky-dark border-t-transparent rounded-full animate-spin" />
+              <div>
+                <p className="text-sky-dark font-medium">
+                  Processing PDF... This may take a moment.
+                </p>
+                {currentPageRange && (
+                  <span className="block mt-1 text-sm text-sky-dark/80">
+                    Extracting pages {currentPageRange.start} to {currentPageRange.end}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 rounded-lg">
-            <p className="text-red-700">{error}</p>
+          <div className="mt-6 p-6 bg-gradient-to-br from-coral/20 to-coral/10 rounded-2xl animate-fade-in">
+            <p className="text-coral-dark">{error}</p>
           </div>
         )}
       </div>
 
       {extractedData && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Extracted Content</h3>
+        <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-light p-8 animate-slide-up">
+          <h3 className="text-2xl font-quicksand font-semibold text-gray-800 mb-6">Extracted Content</h3>
           
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-gray-700">Curriculum Name</h4>
-              <p className="text-gray-900">{extractedData.name}</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-sage/10 to-transparent rounded-2xl p-6">
+                <h4 className="font-semibold text-sage-dark mb-2">Curriculum Name</h4>
+                <p className="text-gray-800">{extractedData.name}</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-sky/10 to-transparent rounded-2xl p-6">
+                <h4 className="font-semibold text-sky-dark mb-2">Subject</h4>
+                <p className="text-gray-800">{extractedData.subject}</p>
+              </div>
             </div>
 
             <div>
-              <h4 className="font-medium text-gray-700">Subject</h4>
-              <p className="text-gray-900">{extractedData.subject}</p>
-            </div>
-
-            <div>
-              <h4 className="font-medium text-gray-700">Structure</h4>
-              <div className="mt-2 space-y-3">
-                {extractedData.chapters.map((chapter) => (
-                  <div key={chapter.id} className="border-l-2 border-gray-200 pl-4">
-                    <h5 className="font-medium text-gray-900">
+              <h4 className="font-semibold text-gray-800 mb-4">Structure</h4>
+              <div className="space-y-4">
+                {extractedData.chapters.map((chapter, index) => (
+                  <div 
+                    key={chapter.id} 
+                    className="border-l-4 border-lavender-light pl-6 animate-slide-up"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <h5 className="font-semibold text-gray-800">
                       Chapter {chapter.order}: {chapter.name}
                     </h5>
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-3 space-y-2">
                       {chapter.sections.map((section) => (
-                        <div key={section.id} className="text-sm text-gray-600 ml-4">
-                          • {section.name} ({section.problems.length} problems)
+                        <div key={section.id} className="flex items-center space-x-2 text-sm text-gray-600 ml-4">
+                          <div className="w-1.5 h-1.5 bg-lavender rounded-full" />
+                          <span>{section.name}</span>
+                          <span className="text-lavender-dark font-medium">({section.problems.length} problems)</span>
                         </div>
                       ))}
                     </div>
@@ -166,21 +182,26 @@ export default function UploadPage() {
               </div>
             </div>
 
-            <div className="pt-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Total: {extractedData.chapters.length} chapters, {' '}
-                {extractedData.chapters.reduce((acc, ch) => acc + ch.sections.length, 0)} sections, {' '}
-                {extractedData.chapters.reduce((acc, ch) => 
-                  acc + ch.sections.reduce((secAcc, sec) => secAcc + sec.problems.length, 0), 0
-                )} problems
-              </p>
-              
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                Save Curriculum
-              </button>
+            <div className="pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="space-y-1">
+                  <p className="text-lg font-semibold text-gray-800">Summary</p>
+                  <p className="text-gray-600">
+                    {extractedData.chapters.length} chapters • 
+                    {extractedData.chapters.reduce((acc, ch) => acc + ch.sections.length, 0)} sections • 
+                    {extractedData.chapters.reduce((acc, ch) => 
+                      acc + ch.sections.reduce((secAcc, sec) => secAcc + sec.problems.length, 0), 0
+                    )} problems
+                  </p>
+                </div>
+                
+                <button
+                  onClick={handleSave}
+                  className="px-8 py-3 bg-gradient-to-r from-sage to-sage-dark text-white rounded-3xl font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sage"
+                >
+                  Save Curriculum
+                </button>
+              </div>
             </div>
           </div>
         </div>

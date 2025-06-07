@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 // Mock data for sections
-const mockSections = {
+const mockSections: Record<string, Array<{ id: string; name: string; problemCount: number }>> = {
   '1': [
     { id: '1', name: 'Section 1.1: Order of Operations', problemCount: 15 },
     { id: '2', name: 'Section 1.2: Distributive Property', problemCount: 12 },
