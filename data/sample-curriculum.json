@@ -1,0 +1,108 @@
+{
+  "curriculum": {
+    "id": "aops-prealgebra",
+    "name": "Art of Problem Solving Pre-Algebra",
+    "subject": "Mathematics",
+    "description": "A comprehensive pre-algebra curriculum designed to build problem-solving skills",
+    "chapters": [
+      {
+        "id": "chapter-1",
+        "name": "Properties of Arithmetic",
+        "order": 1,
+        "sections": [
+          {
+            "id": "section-1-1",
+            "name": "Order of Operations",
+            "order": 1,
+            "problems": [
+              {
+                "id": "p1-1-1",
+                "number": 1,
+                "content": "Evaluate: 3 + 4 × 5",
+                "solution": "3 + 4 × 5 = 3 + 20 = 23",
+                "skills": ["order of operations", "multiplication", "addition"]
+              },
+              {
+                "id": "p1-1-2",
+                "number": 2,
+                "content": "Simplify: 2 × (8 + 3) - 5",
+                "solution": "2 × (8 + 3) - 5 = 2 × 11 - 5 = 22 - 5 = 17",
+                "skills": ["order of operations", "parentheses", "multiplication", "subtraction"]
+              },
+              {
+                "id": "p1-1-3",
+                "number": 3,
+                "content": "Calculate: 15 ÷ 3 + 2 × 4",
+                "solution": "15 ÷ 3 + 2 × 4 = 5 + 8 = 13",
+                "skills": ["order of operations", "division", "multiplication", "addition"]
+              },
+              {
+                "id": "p1-1-4",
+                "number": 4,
+                "content": "Evaluate: 4² - 3 × 2 + 1",
+                "solution": "4² - 3 × 2 + 1 = 16 - 6 + 1 = 11",
+                "skills": ["order of operations", "exponents", "multiplication", "subtraction", "addition"]
+              }
+            ]
+          },
+          {
+            "id": "section-1-2",
+            "name": "Distributive Property",
+            "order": 2,
+            "problems": [
+              {
+                "id": "p1-2-1",
+                "number": 1,
+                "content": "Use the distributive property: 3(x + 5)",
+                "solution": "3(x + 5) = 3x + 15",
+                "skills": ["distributive property", "algebraic expressions"]
+              },
+              {
+                "id": "p1-2-2",
+                "number": 2,
+                "content": "Expand: 2(3x - 4) + 5",
+                "solution": "2(3x - 4) + 5 = 6x - 8 + 5 = 6x - 3",
+                "skills": ["distributive property", "algebraic expressions", "combining like terms"]
+              },
+              {
+                "id": "p1-2-3",
+                "number": 3,
+                "content": "Simplify: 4(2a + 3) - 2(a - 1)",
+                "solution": "4(2a + 3) - 2(a - 1) = 8a + 12 - 2a + 2 = 6a + 14",
+                "skills": ["distributive property", "algebraic expressions", "combining like terms"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "chapter-2",
+        "name": "Exponents",
+        "order": 2,
+        "sections": [
+          {
+            "id": "section-2-1",
+            "name": "Introduction to Exponents",
+            "order": 1,
+            "problems": [
+              {
+                "id": "p2-1-1",
+                "number": 1,
+                "content": "Evaluate: 2⁵",
+                "solution": "2⁵ = 2 × 2 × 2 × 2 × 2 = 32",
+                "skills": ["exponents", "multiplication"]
+              },
+              {
+                "id": "p2-1-2",
+                "number": 2,
+                "content": "Simplify: 3² × 3³",
+                "solution": "3² × 3³ = 3^(2+3) = 3⁵ = 243",
+                "skills": ["exponent rules", "multiplication of powers"]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
