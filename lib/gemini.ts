@@ -4,7 +4,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 export async function generateHint(problemContent: string, hintNumber: number): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' })
     
     const prompt = `You are a helpful math tutor. A student is working on this problem:
 
@@ -34,7 +34,7 @@ export async function generateSimilarProblem(
   solution?: string
 ): Promise<{ content: string; solution: string }> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' })
     
     const prompt = `You are a math problem generator. Create a similar problem to this one:
 

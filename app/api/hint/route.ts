@@ -22,9 +22,38 @@ export async function POST(request: NextRequest) {
 
     const hint = await generateHint(problemContent, hintNumber)
 
-    // In a real app, we'd save this to the database
-    // For now, just return the generated hint
-    return NextResponse.json({ hint })
+    // Save hint to database
+    const { data: hintData, error: hintError } = await supabase
+      .from('hints')
+      .insert({
+        problem_id: problemId,
+        user_id: user.id,
+        hint_number: hintNumber,
+        content: hint
+      })
+      .select()
+      .single()
+
+    if (hintError) {
+      console.error('Error saving hint:', hintError)
+      return NextResponse.json(
+        { error: 'Failed to save hint' },
+        { status: 500 }
+      )
+    }
+
+    // Get all hints for this problem
+    const { data: allHints } = await supabase
+      .from('hints')
+      .select('*')
+      .eq('problem_id', problemId)
+      .eq('user_id', user.id)
+      .order('hint_number', { ascending: true })
+
+    return NextResponse.json({ 
+      hint: hintData,
+      allHints: allHints || []
+    })
   } catch (error) {
     console.error('Error in hint API:', error)
     return NextResponse.json(
