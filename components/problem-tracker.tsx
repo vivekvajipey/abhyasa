@@ -10,6 +10,12 @@ interface Problem {
   timeSpent?: number
   hintsUsed?: number
   flaggedForReview?: boolean
+  hints?: Array<{
+    id: string
+    hint_number: number
+    content: string
+    created_at: string
+  }>
 }
 
 interface ProblemTrackerProps {
@@ -18,6 +24,9 @@ interface ProblemTrackerProps {
   onFlag: (problemId: string) => void
   onRequestHint: (problemId: string, timeSpent: number) => void
   onGenerateSimilar: (problemId: string) => void
+  isGeneratingHint?: boolean
+  isGeneratingSimilar?: boolean
+  isVariant?: boolean
 }
 
 export function ProblemTracker({
@@ -26,10 +35,15 @@ export function ProblemTracker({
   onFlag,
   onRequestHint,
   onGenerateSimilar,
+  isGeneratingHint = false,
+  isGeneratingSimilar = false,
+  isVariant = false,
 }: ProblemTrackerProps) {
   const [isTimerActive, setIsTimerActive] = useState(false)
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [showHintButton, setShowHintButton] = useState(false)
+  const [showHints, setShowHints] = useState(false)
+  const [hints, setHints] = useState(problem.hints || [])
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -85,13 +99,20 @@ export function ProblemTracker({
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div className={`bg-white p-6 rounded-lg shadow-sm border ${isVariant ? 'border-blue-300 ml-8' : 'border-gray-200'}`}>
       <div className="space-y-4">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Problem {problem.number}
-            </h3>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-lg font-medium text-gray-900">
+                Problem {problem.number}
+              </h3>
+              {isVariant && (
+                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                  Generated Variant
+                </span>
+              )}
+            </div>
             <p className="text-gray-700">{problem.content}</p>
           </div>
           {problem.flaggedForReview && (
@@ -135,9 +156,14 @@ export function ProblemTracker({
             {showHintButton && isTimerActive && (
               <button
                 onClick={handleRequestHint}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                disabled={isGeneratingHint}
+                className={`px-3 py-1 text-sm border rounded-md transition-colors ${
+                  isGeneratingHint 
+                    ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed' 
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
               >
-                Get Hint
+                {isGeneratingHint ? 'Generating...' : 'Get Hint'}
               </button>
             )}
             
@@ -150,17 +176,46 @@ export function ProblemTracker({
               </button>
             )}
 
-            {problem.completed && (
+            {problem.completed && !isVariant && (
               <button
                 onClick={handleGenerateSimilar}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                disabled={isGeneratingSimilar}
+                className={`px-3 py-1 text-sm border rounded-md transition-colors ${
+                  isGeneratingSimilar 
+                    ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed' 
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
               >
-                Generate Similar
+                {isGeneratingSimilar ? 'Generating...' : 'Generate Similar'}
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {hints.length > 0 && (
+        <div className="mt-4 border-t pt-4">
+          <button
+            onClick={() => setShowHints(!showHints)}
+            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {showHints ? 'Hide' : 'Show'} hints ({hints.length})
+          </button>
+          
+          {showHints && (
+            <div className="mt-3 space-y-3">
+              {hints.map((hint) => (
+                <div key={hint.id} className="bg-blue-50 p-3 rounded-md">
+                  <p className="text-sm font-medium text-blue-900 mb-1">
+                    Hint #{hint.hint_number}
+                  </p>
+                  <p className="text-sm text-blue-800">{hint.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

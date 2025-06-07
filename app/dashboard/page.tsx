@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { ensureUserExists } from '@/lib/ensure-user'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -7,6 +8,13 @@ export default async function DashboardPage() {
   
   if (!user) {
     return <div>Please sign in to view your curricula</div>
+  }
+
+  // Ensure user exists in our database
+  try {
+    await ensureUserExists(supabase, user.id, user.email!)
+  } catch (error) {
+    console.error('Error ensuring user exists:', error)
   }
   
   // Fetch curricula directly from Supabase

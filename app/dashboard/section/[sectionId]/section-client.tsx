@@ -61,12 +61,15 @@ export default function SectionClient({ sectionId }: { sectionId: string }) {
       })
 
       if (response.ok) {
-        const { hint } = await response.json()
-        alert(`Hint #${hintsUsed}: ${hint}`)
+        const { hint, allHints } = await response.json()
         
         setProblemStates(prev => ({
           ...prev,
-          [problemId]: { ...prev[problemId], hintsUsed }
+          [problemId]: { 
+            ...prev[problemId], 
+            hintsUsed: allHints.length,
+            hints: allHints 
+          }
         }))
       }
     } catch (error) {
@@ -85,6 +88,7 @@ export default function SectionClient({ sectionId }: { sectionId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           originalProblem: problem.content,
+          problemId: problem.id
         }),
       })
 
@@ -116,7 +120,8 @@ export default function SectionClient({ sectionId }: { sectionId: string }) {
             key={problem.id}
             problem={{
               ...problem,
-              ...problemStates[problem.id]
+              ...problemStates[problem.id],
+              hints: problemStates[problem.id]?.hints || []
             }}
             onComplete={handleComplete}
             onFlag={handleFlag}

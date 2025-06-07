@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateSimilarProblem } from '@/lib/gemini'
+import { ensureUserExists } from '@/lib/ensure-user'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { originalProblem, solution, sectionId, problemNumber } = await request.json()
+    // Ensure user exists in our database
+    await ensureUserExists(supabase, user.id, user.email!)
+
+    const { originalProblem, solution, sectionId, problemId } = await request.json()
 
     if (!originalProblem) {
       return NextResponse.json(
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
           content: newProblem.content,
           solution: newProblem.solution,
           generated: true,
-          parent_problem_id: problemNumber // Store reference to original problem
+          parent_problem_id: problemId // Store reference to original problem
         })
         .select()
         .single()

@@ -1,4 +1,4 @@
-import SectionClient from './section-client'
+import SectionClient from './section-client-v2'
 import { createClient } from '@/lib/supabase/server'
 
 async function fetchSection(curriculumId: string, sectionId: string) {
@@ -9,7 +9,18 @@ async function fetchSection(curriculumId: string, sectionId: string) {
     .from('sections')
     .select(`
       *,
-      problems (*),
+      problems (
+        id,
+        section_id,
+        problem_number,
+        content,
+        solution,
+        skills,
+        generated,
+        parent_problem_id,
+        created_at,
+        updated_at
+      ),
       chapters!inner (
         *,
         curriculum:curricula!inner (*)
@@ -47,7 +58,7 @@ export default async function SectionPage({
       curriculumId={curriculumId}
       sectionId={sectionId}
       sectionName={section.name}
-      problems={section.problems}
+      initialProblems={section.problems}
       curriculumName={curriculum.name}
     />
   )
