@@ -46,6 +46,15 @@ export function ProblemTracker({
   const [hints, setHints] = useState(problem.hints || [])
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Update hints when problem.hints changes
+  useEffect(() => {
+    const newHints = problem.hints || []
+    if (newHints.length > hints.length) {
+      setShowHints(true)
+    }
+    setHints(newHints)
+  }, [problem.hints])
+
   useEffect(() => {
     if (isTimerActive) {
       intervalRef.current = setInterval(() => {

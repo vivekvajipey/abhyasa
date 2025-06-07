@@ -64,6 +64,7 @@ export default function SectionClient({
       const hintsResponse = await fetch(`/api/hints?problemIds=${problemIds}`)
       if (hintsResponse.ok) {
         const { hints } = await hintsResponse.json()
+        console.log('Fetched hints:', hints) // Debug log
         setProblemHints(hints)
       }
     } catch (error) {
@@ -147,12 +148,17 @@ export default function SectionClient({
 
       if (response.ok) {
         const { hint, allHints } = await response.json()
+        console.log('Received hints:', allHints) // Debug log
         
         // Update hints state
-        setProblemHints(prev => ({
-          ...prev,
-          [problemId]: allHints
-        }))
+        setProblemHints(prev => {
+          const newHints = {
+            ...prev,
+            [problemId]: allHints
+          }
+          console.log('Updated problemHints:', newHints) // Debug log
+          return newHints
+        })
 
         // Update problem states with hint count
         setProblemStates(prev => ({
@@ -162,6 +168,9 @@ export default function SectionClient({
             hints_used: allHints.length 
           }
         }))
+        
+        // Force a re-render by updating problems to trigger hint display
+        setProblems(prev => [...prev])
       }
     } catch (error) {
       console.error('Error requesting hint:', error)
