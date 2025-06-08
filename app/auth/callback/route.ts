@@ -6,10 +6,6 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
 
-  console.log('Auth callback - origin:', origin)
-  console.log('Auth callback - forwardedHost:', request.headers.get('x-forwarded-host'))
-  console.log('Auth callback - NODE_ENV:', process.env.NODE_ENV)
-
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -30,7 +26,6 @@ export async function GET(request: Request) {
         redirectUrl = `${origin}${next}`
       }
       
-      console.log('Auth callback - redirecting to:', redirectUrl)
       return NextResponse.redirect(redirectUrl)
     }
   }
