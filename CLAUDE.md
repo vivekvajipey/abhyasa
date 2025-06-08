@@ -1,51 +1,55 @@
-# Abhyasa Learning Progress Tracker - Project Requirements Document
+# Abhyasa Learning Progress Tracker - Expanded Vision with USNCO Case Study
 
-## Project Overview
+## Evolution from Problem Tracker to Goal Achievement Platform
 
-This web application helps students systematically work through structured educational materials. We can start with the Art of Problem Solving Pre-Algebra textbook. The core purpose is to provide a clean, distraction-free environment for tracking progress while adding intelligent features that support self-directed learning. Unlike simple checkbox apps, this system understands the learning process and provides timely support through hint generation and practice problem creation.
+The original vision for Abhyasa focused on tracking progress through structured textbooks like Art of Problem Solving Pre-Algebra. However, through our analysis of how students actually prepare for challenging goals like the US National Chemistry Olympiad (USNCO), we've identified a critical gap: real learning goals require orchestrating multiple resources in a specific sequence, not just completing problems from a single textbook.
 
-The app addresses a key challenge in self-study: students often get stuck on problems without knowing whether they should persist, seek hints, or review earlier material. By combining progress tracking with intelligent problem generation and time-aware hint systems, learners can maintain momentum while building genuine understanding.
+When students tackle ambitious learning objectives, they don't follow a linear path through a single resource. For the example for studying for the US Chemistry Olympiad exams, instead, they weave together textbooks, practice exams, video lectures, online guides, and community resources into a coherent learning journey. Our platform needs to reflect this reality by elevating "learning goals" to become the primary organizing principle, with individual resources serving as components within that larger structure.
 
-The application embraces minimalism in its visual design while being sophisticated in its learning support. Every feature should earn its place by directly supporting the learning process. The interface draws inspiration from Notion's clean aesthetic.
+## Case Study: Acing the USNCO Local Exam
 
-## Technical Architecture
+The USNCO local exam represents a perfect test case for our expanded platform. This competitive exam challenges 16,000 students annually with 60 multiple-choice questions in 110 minutes, with only the highest scorers advancing to nationals. Recent participants report needing scores of 57-58 out of 60 to qualify in competitive regions, making systematic preparation essential.
 
-The application will be built using Next.js and deployed on Vercel, making sure that the UI can be used on either desktop or mobile cleanly. Authentication happens through Google OAuth. All user data is stored in Supabase, ensuring reliable data persistence and real-time updates across devices. The AI components for hint and problem generation will integrate with LLM APIs (specifically Google's new Gemini 2.5 Pro model).
+Our research into successful USNCO preparation revealed several key insights. First, top performers dedicate 2-3 hours daily over 6+ months, following a carefully orchestrated plan that combines multiple resources. They don't just study harder; they study strategically, using specific textbooks for different purposes, practicing with decades of past exams, and leveraging community-created resources like Dr. Chen's annotated solutions.
 
-## Core Features
+The most successful students follow a phased approach that builds from foundational chemistry knowledge through advanced topics and finally to intensive exam-specific practice. They recognize that different resources serve different purposes: Zumdahl's textbook builds intuition, Klein's organic chemistry book provides systematic skill development, while past exams reveal the specific patterns and expectations of the competition. This multi-resource orchestration is exactly what our platform needs to support.
 
-### Progress Tracking System
+## The Challenge of Current Learning Approaches
 
-The main screen presents a clear visualization of the student's journey through the curriculum. Each chapter and section is displayed with its completion status, allowing students to see both their overall progress and identify areas needing attention. The design prioritizes clarity – a student should understand their status at a glance without interpreting complex metrics or statistics.
+Traditional learning platforms, including our current Abhyasa design, assume a simple hierarchy: curriculum contains chapters, which contain problems. This works well for a single textbook but breaks down completely when preparing for something like USNCO. Students preparing for this exam need to coordinate studying from multiple textbooks, reviewing dozens of past exams, watching supplementary videos, and consulting community guides—all while maintaining a coherent sense of progress toward their ultimate goal.
 
-Within each section, problems are listed with simple checkboxes for completion tracking. However, these aren't just binary complete/incomplete markers. The system tracks additional context like time spent, whether hints were used, and if the problem was flagged to revisit/review. This metadata remains hidden during normal use but becomes valuable for generating insights and recommendations.
+The current structure also fails to capture the interconnected nature of learning. When a student struggles with an electrochemistry problem on a practice exam, they need to quickly identify whether they should review the relevant textbook chapter, watch a video explanation, or practice simpler problems first. Without a goal-oriented structure that understands these relationships, students waste time and lose momentum.
 
-### Intelligent Timer System
+## Proposed Platform Architecture
 
-Students can optionally start a timer when beginning a problem. This serves multiple purposes beyond simple time tracking. First, it enables the hint system – hints only become available after a reasonable attempt time, preventing students from immediately seeking help without genuine effort. Second, it provides data about which problems or concepts consistently take longer, indicating areas where additional practice or prerequisite review might help.
+We propose expanding Abhyasa to treat learning goals as first-class entities that organize and contextualize all other resources. Instead of starting with a curriculum, students would begin by defining their learning goal—such as "Ace the USNCO Local Exam by March 2025." This goal then becomes the container for all related resources, study plans, and progress tracking.
 
-The timer runs in the background, allowing students to reference other sections or take breaks without losing their time data. If a problem takes exceptionally long, the system can suggest flagging it for review or generating similar but simpler problems to build up to the challenging one.
+Within each learning goal, students can aggregate diverse resources: textbook chapters, practice exams, video lectures, problem sets, and reference materials. The platform maintains the existing granular tracking capabilities but adds a layer of orchestration that helps students understand how each resource contributes to their larger objective. Progress is measured not just by problems completed but by advancement toward the actual goal.
 
-### Contextual Hint Generation
+The key innovation is that the platform understands relationships between resources. When working through a practice exam, students can easily access relevant textbook sections or video explanations for concepts they're struggling with. The system tracks which resources effectively address which weaknesses, building a personalized map of the most efficient learning paths.
 
-After a student has spent sufficient time on a problem (configurable, but defaulting to 5 minutes), the option to receive hints becomes available. These hints are generated based on the problem content and the typical solution approach. Rather than showing the full solution, hints guide students toward discovering the answer themselves. This maintains the learning value while preventing complete frustration.
+## Study Plan Creation and Management
 
-### Similar Problem Generation
+Successful learning requires more than just access to resources—it demands thoughtful sequencing and pacing. Our platform enables students to create structured study plans that reflect the natural phases of learning. For USNCO preparation, this might mean a foundational phase focusing on core chemistry concepts, an advanced phase covering specialized topics like descriptive chemistry, and a final phase emphasizing timed practice exams.
 
-One of the most powerful features is the ability to generate similar problems on demand. When a student completes a problem and wants more practice, or when they struggled with a problem and want to try similar ones, they can request generated alternatives. These maintain the same conceptual requirements while varying the specific numbers and context.
+Within these phases, students sequence specific activities from their resource collection. The platform helps them balance different types of learning: conceptual reading, problem-solving practice, and assessment. It also supports prerequisite tracking, ensuring students build knowledge in the correct order. This prevents the frustration of attempting advanced problems before mastering foundational concepts.
 
-The generation system is particularly sophisticated when it has access to the original problem's solution. It can ensure that generated problems test the same skills and concepts, avoiding the common issue where "similar" problems are actually testing something entirely different. Generated problems are added to the section's problem list, becoming part of the student's permanent practice set.
+The system provides intelligent pacing based on the target date and available study time. If a student falls behind their planned schedule, the platform can suggest adjustments: which activities to prioritize, where to spend extra time, or what to skip if time runs short. This dynamic adaptation helps students stay on track without feeling overwhelmed by rigid schedules.
 
-This similar problem is generated through an API call to the Gemini 2.5 Pro language model.
+## Key Features for Goal Achievement
 
-## User Experience Flow
+The platform's power comes from integrating several key features that work together to support goal achievement. Cross-resource progress tracking gives students a unified view of their advancement, showing not just how many problems they've solved but how those problems contribute to mastering specific topics needed for their goal. This holistic view prevents the common mistake of over-preparing in comfortable areas while neglecting challenging topics.
 
-When students first sign in, they're presented with a welcoming, uncluttered interface. After authentication, they see their curriculum overview – for testing, this will be the pre-loaded Art of Problem Solving Pre-Algebra structure. Clicking into any section reveals the list of problems for that unit.
+Performance analytics aggregate data across all resources to identify patterns and gaps. When a student consistently struggles with thermodynamics problems across different textbooks and practice exams, the system recognizes this pattern and can suggest targeted interventions. This goes beyond simple right/wrong tracking to understand the deeper learning trajectory.
 
-The problem-solving experience is designed to mirror natural study habits. Students can work through problems in order or jump around as needed. Starting a timer is optional but encouraged. As they work, they can mark problems complete, flag them for review, or generate similar problems for additional practice. The interface stays out of the way during problem-solving, with features appearing contextually when needed.
+The screenshot feature, originally conceived for capturing individual problems, becomes even more powerful in this goal-oriented context. Students can capture content from any source—PDFs, websites, physical textbooks, or video lectures—and the system intelligently categorizes it within their learning goal. This captured content can trigger hint generation, similar problem creation, or links to relevant resources, all contextualized by the student's specific objective.
 
-## Content Management Approach
+## Success Vision
 
-For initial testing and development, problems and their solutions will be stored in JSON format. This allows rapid iteration and easy modification without database changes. The structure includes not just problem text but also metadata about skills tested and typical solution approaches, enabling intelligent hint and problem generation.
+In our vision, a student preparing for USNCO would begin by creating their goal within Abhyasa and setting their target exam date. They would then build their resource library, either by following templates from successful students or constructing their own based on research and recommendations. The platform would help them create a realistic study plan that sequences these resources effectively.
 
-In the future production version, users will be able to work with their own materials through PDF upload or image capture. However, the initial focus is on proving the concept with pre-structured content before adding the complexity of content extraction and recognition.
+As they progress through their preparation, students would experience seamless transitions between different types of learning activities. When stuck on a practice problem, they could instantly access relevant textbook explanations or community discussions. The platform would track their progress holistically, showing not just completion percentages but genuine mastery of required concepts.
+
+Most importantly, the platform would provide intelligent support throughout the journey. By understanding both the goal requirements and the student's current capabilities, it can offer personalized guidance: which topics need more attention, when to transition from learning to practice, and how to optimize remaining study time. This transforms preparation from a anxious scramble into a systematic progression toward success.
+
+This expanded vision transforms Abhyasa from a problem-completion tracker into a comprehensive learning achievement platform. By organizing around meaningful goals rather than isolated resources, we create a tool that matches how ambitious students actually learn. The USNCO case study demonstrates the potential, but this approach applies equally to any complex learning objective—from mastering calculus to preparing for coding interviews to learning a new language. The key is recognizing that real learning happens not through linear progression through a single resource, but through thoughtful orchestration of diverse materials toward a meaningful goal.
