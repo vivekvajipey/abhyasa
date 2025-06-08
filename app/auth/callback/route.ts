@@ -4,7 +4,11 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = searchParams.get('next') ?? '/dashboard'
+
+  console.log('Auth callback - origin:', origin)
+  console.log('Auth callback - forwardedHost:', request.headers.get('x-forwarded-host'))
+  console.log('Auth callback - NODE_ENV:', process.env.NODE_ENV)
 
   if (code) {
     const supabase = await createClient()
@@ -12,13 +16,18 @@ export async function GET(request: Request) {
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
+      
+      let redirectUrl
       if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
+        redirectUrl = `${origin}${next}`
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+        redirectUrl = `https://${forwardedHost}${next}`
       } else {
-        return NextResponse.redirect(`${origin}${next}`)
+        redirectUrl = `${origin}${next}`
       }
+      
+      console.log('Auth callback - redirecting to:', redirectUrl)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
