@@ -38,7 +38,8 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
           title,
           author,
           url,
-          notes
+          notes,
+          metadata
         )
       )
     `)

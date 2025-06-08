@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { GoalWithFullDetails } from '@/types/goals'
 
 interface GoalClientProps {
@@ -9,7 +10,15 @@ interface GoalClientProps {
 }
 
 export default function GoalClient({ goal }: GoalClientProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'resources'>('overview')
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab') as 'overview' | 'phases' | 'resources' | null
+  const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'resources'>(tabParam || 'overview')
+  
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
   
   const completedPhases = goal.goal_phases?.filter((p: any) => p.status === 'completed').length || 0
   const totalPhases = goal.goal_phases?.length || 0
@@ -222,40 +231,87 @@ export default function GoalClient({ goal }: GoalClientProps) {
         {activeTab === 'resources' && (
           <div className="space-y-4">
             {goal.goal_resources && goal.goal_resources.length > 0 ? (
-              goal.goal_resources.map((goalResource: any, index: number) => (
-                <div
-                  key={goalResource.id}
-                  className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                        {goalResource.resources?.title || 'Untitled Resource'}
-                      </h4>
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span className="capitalize">{goalResource.resources?.type || 'unknown'}</span>
-                        {goalResource.resources?.author && (
-                          <span>by {goalResource.resources.author}</span>
-                        )}
+              goal.goal_resources.map((goalResource: any, index: number) => {
+                const resource = goalResource.resources
+                const resourceTypeIcons: Record<string, string> = {
+                  textbook: '📚',
+                  reading: '📖',
+                  practice_exam: '📝',
+                  problem_set: '🧮',
+                  video: '🎥',
+                  reference: '📋',
+                  website: '🌐',
+                  other: '📁'
+                }
+                
+                return (
+                  <div
+                    key={goalResource.id}
+                    className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up hover:shadow-medium transition-all cursor-pointer"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex space-x-4">
+                        <div className="text-3xl">
+                          {resourceTypeIcons[resource?.type || 'other']}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                            {resource?.title || 'Untitled Resource'}
+                          </h4>
+                          
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                            <span className="capitalize bg-gray-100 px-2 py-1 rounded">
+                              {resource?.type?.replace('_', ' ') || 'unknown'}
+                            </span>
+                            {resource?.author && (
+                              <span>by {resource.author}</span>
+                            )}
+                            {resource?.metadata?.total_pages && (
+                              <span>{resource.metadata.total_pages} pages</span>
+                            )}
+                            {resource?.metadata?.total_questions && (
+                              <span>{resource.metadata.total_questions} questions</span>
+                            )}
+                            {resource?.metadata?.time_limit_minutes && (
+                              <span>{resource.metadata.time_limit_minutes} min time limit</span>
+                            )}
+                          </div>
+                          
+                          {(goalResource.notes || resource?.notes) && (
+                            <p className="text-gray-600 mt-3 text-sm">
+                              {goalResource.notes || resource.notes}
+                            </p>
+                          )}
+                          
+                          {resource?.url && (
+                            <a 
+                              href={resource.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-1 text-sm text-sky-600 hover:text-sky-700 mt-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span>View Resource</span>
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
                       </div>
                       
-                      {goalResource.notes && (
-                        <p className="text-gray-600 mt-2">{goalResource.notes}</p>
-                      )}
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                        goalResource.priority === 'high' ? 'bg-coral/20 text-coral-dark' :
+                        goalResource.priority === 'medium' ? 'bg-sage/20 text-sage-dark' :
+                        'bg-gray-200 text-gray-600'
+                      }`}>
+                        {goalResource.priority} priority
+                      </span>
                     </div>
-                    
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      goalResource.priority === 'high' ? 'bg-coral/20 text-coral-dark' :
-                      goalResource.priority === 'medium' ? 'bg-sage/20 text-sage-dark' :
-                      'bg-gray-200 text-gray-600'
-                    }`}>
-                      {goalResource.priority} priority
-                    </span>
                   </div>
-                </div>
-              ))
+                )
+              })
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-600 mb-4">No resources added yet</p>
