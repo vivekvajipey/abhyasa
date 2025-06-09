@@ -231,7 +231,7 @@ export default function PhaseClient({
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Resources Overview</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                {Object.entries(resourcesByType).map(([type, resources]: [string, any[]]) => (
+                {Object.entries(resourcesByType).map(([type, resources]) => (
                   <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl">{resourceTypeIcons[type as ResourceType]}</span>
@@ -239,7 +239,7 @@ export default function PhaseClient({
                         <p className="font-medium text-gray-800 capitalize">
                           {type.replace('_', ' ')}
                         </p>
-                        <p className="text-sm text-gray-600">{resources.length} resource{resources.length !== 1 ? 's' : ''}</p>
+                        <p className="text-sm text-gray-600">{(resources as any[]).length} resource{(resources as any[]).length !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                   </div>
@@ -353,14 +353,14 @@ export default function PhaseClient({
 
         {activeTab === 'resources' && (
           <div className="space-y-6">
-            {Object.entries(resourcesByType).map(([type, resources]: [string, any[]]) => (
+            {Object.entries(resourcesByType).map(([type, resources]) => (
               <div key={type} className="space-y-3">
                 <h4 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
                   <span>{resourceTypeIcons[type as ResourceType]}</span>
                   <span className="capitalize">{type.replace('_', ' ')}</span>
                 </h4>
                 
-                {resources.map((pr: any, index: number) => {
+                {(resources as any[]).map((pr: any, index: number) => {
                   const resource = pr.resources
                   
                   return (

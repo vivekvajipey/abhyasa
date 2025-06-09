@@ -10,7 +10,12 @@ interface PageProps {
   params: Promise<{ goalId: string }>
 }
 
-const resourceTypeDetails = {
+const resourceTypeDetails: Record<ResourceType, {
+  label: string
+  icon: string
+  placeholder: string
+  fields: string[]
+}> = {
   textbook: { 
     label: 'Textbook', 
     icon: '📚',
