@@ -105,6 +105,7 @@ export default async function PhasePage({
       phaseResources={phaseResources || []}
       activityProgress={progressMap}
       goalId={goalId}
+      userId={user.id}
     />
   )
 }

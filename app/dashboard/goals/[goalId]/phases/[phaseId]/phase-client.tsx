@@ -11,13 +11,15 @@ interface PhaseClientProps {
   phaseResources: any[]
   activityProgress: any
   goalId: string
+  userId: string
 }
 
 export default function PhaseClient({ 
   phase, 
   phaseResources, 
   activityProgress, 
-  goalId 
+  goalId,
+  userId
 }: PhaseClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'resources'>('overview')
   const [selectedResource, setSelectedResource] = useState<any>(null)
@@ -296,14 +298,31 @@ export default function PhaseClient({
                       </div>
                       
                       <button
-                        onClick={() => {
-                          // Handle activity based on type
-                          if (activity.type === 'exam' && activity.resources?.type === 'practice_exam') {
-                            handleStartExam(activity.resource_id)
-                          } else if (activity.type === 'practice' && activity.resources?.type === 'problem_set') {
-                            handleViewProblemSet(activity.resource_id)
-                          } else if (activity.type === 'read' && activity.resources?.type === 'reading') {
-                            handleReadingProgress(activity.resource_id)
+                        onClick={async () => {
+                          // Navigate based on activity type and resource
+                          if (activity.resources) {
+                            if (activity.type === 'exam' && activity.resources.type === 'practice_exam') {
+                              handleStartExam(activity.resources.id)
+                            } else if (activity.type === 'practice' && activity.resources.type === 'problem_set') {
+                              handleViewProblemSet(activity.resources.id)
+                            } else if (activity.type === 'read' && ['reading', 'textbook', 'reference'].includes(activity.resources.type)) {
+                              handleReadingProgress(activity.resources.id)
+                            } else if (activity.resources.url) {
+                              window.open(activity.resources.url, '_blank')
+                            }
+                          }
+                          
+                          // Mark activity as in progress if not started
+                          if (!progress || progress.status === 'not_started') {
+                            const supabase = createClient()
+                            await supabase
+                              .from('activity_progress')
+                              .upsert({
+                                user_id: userId,
+                                activity_id: activity.id,
+                                status: 'in_progress',
+                                started_at: new Date().toISOString()
+                              })
                           }
                         }}
                         className={`px-4 py-2 rounded-2xl font-medium transition-all ${
@@ -352,9 +371,9 @@ export default function PhaseClient({
                       onClick={() => {
                         if (resource.type === 'practice_exam') {
                           handleStartExam(resource.id)
-                        } else if (resource.type === 'problem_set' || resource.type === 'textbook') {
+                        } else if (resource.type === 'problem_set') {
                           handleViewProblemSet(resource.id)
-                        } else if (resource.type === 'reading') {
+                        } else if (resource.type === 'reading' || resource.type === 'textbook' || resource.type === 'reference') {
                           handleReadingProgress(resource.id)
                         }
                       }}

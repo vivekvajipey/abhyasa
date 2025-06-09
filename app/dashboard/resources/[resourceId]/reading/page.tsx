@@ -22,7 +22,7 @@ export default async function ReadingPage({
     .select('*')
     .eq('id', resourceId)
     .eq('user_id', user.id)
-    .eq('type', 'reading')
+    .in('type', ['reading', 'textbook', 'reference'])
     .single()
 
   if (error || !resource) {
