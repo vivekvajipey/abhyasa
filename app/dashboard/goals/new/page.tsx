@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { GoalStatus } from '@/types/goals'
+import { DatePicker } from '@/components/date-picker'
 
 export default function NewGoalPage() {
   const router = useRouter()
@@ -117,12 +118,10 @@ export default function NewGoalPage() {
           <label htmlFor="target_date" className="block text-sm font-semibold text-gray-700 mb-2">
             Target Date
           </label>
-          <input
-            type="date"
+          <DatePicker
             id="target_date"
             value={formData.target_date}
-            onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
-            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-sage focus:outline-none transition-colors"
+            onChange={(value) => setFormData({ ...formData, target_date: value })}
           />
         </div>
 

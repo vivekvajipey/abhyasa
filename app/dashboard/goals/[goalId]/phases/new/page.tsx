@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { PhaseStatus } from '@/types/goals'
+import { DatePicker } from '@/components/date-picker'
 
 interface PageProps {
   params: Promise<{ goalId: string }>
@@ -150,12 +151,10 @@ export default function NewPhasePage({ params }: PageProps) {
             <label htmlFor="target_start_date" className="block text-sm font-semibold text-gray-700 mb-2">
               Target Start Date
             </label>
-            <input
-              type="date"
+            <DatePicker
               id="target_start_date"
               value={formData.target_start_date}
-              onChange={(e) => setFormData({ ...formData, target_start_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-sage focus:outline-none transition-colors"
+              onChange={(value) => setFormData({ ...formData, target_start_date: value })}
             />
           </div>
 
@@ -163,13 +162,11 @@ export default function NewPhasePage({ params }: PageProps) {
             <label htmlFor="target_end_date" className="block text-sm font-semibold text-gray-700 mb-2">
               Target End Date
             </label>
-            <input
-              type="date"
+            <DatePicker
               id="target_end_date"
               value={formData.target_end_date}
-              onChange={(e) => setFormData({ ...formData, target_end_date: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, target_end_date: value })}
               min={formData.target_start_date}
-              className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-sage focus:outline-none transition-colors"
             />
           </div>
         </div>

@@ -144,22 +144,22 @@ export default function GoalClient({ goal }: GoalClientProps) {
               <div className="grid gap-4 md:grid-cols-2">
                 <Link
                   href={`/dashboard/goals/${goal.id}/phases/new`}
-                  className="flex items-center justify-center space-x-2 p-4 border-2 border-dashed border-sage-light rounded-2xl hover:border-sage hover:bg-sage/5 transition-all"
+                  className="flex items-center justify-center space-x-2 p-4 bg-gradient-to-r from-sage to-sage-dark text-white rounded-2xl hover:from-sage-dark hover:to-sage transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
                 >
-                  <svg className="w-5 h-5 text-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="text-sage-dark font-medium">Add Phase</span>
+                  <span className="font-semibold">Add Phase</span>
                 </Link>
                 
                 <Link
                   href={`/dashboard/goals/${goal.id}/resources/add`}
-                  className="flex items-center justify-center space-x-2 p-4 border-2 border-dashed border-sky-light rounded-2xl hover:border-sky hover:bg-sky/5 transition-all"
+                  className="flex items-center justify-center space-x-2 p-4 bg-gradient-to-r from-sky to-sky-dark text-white rounded-2xl hover:from-sky-dark hover:to-sky transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
                 >
-                  <svg className="w-5 h-5 text-sky" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
-                  <span className="text-sky-dark font-medium">Add Resource</span>
+                  <span className="font-semibold">Add Resource</span>
                 </Link>
               </div>
             </div>

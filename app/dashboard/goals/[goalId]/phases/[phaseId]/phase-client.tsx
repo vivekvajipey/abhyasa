@@ -196,12 +196,12 @@ export default function PhaseClient({
               <div className="grid gap-4 md:grid-cols-3">
                 <button
                   onClick={handleCreateActivity}
-                  className="flex items-center justify-center space-x-2 p-4 border-2 border-dashed border-sage-light rounded-2xl hover:border-sage hover:bg-sage/5 transition-all"
+                  className="flex items-center justify-center space-x-2 p-4 bg-gradient-to-r from-sage to-sage-dark text-white rounded-2xl hover:from-sage-dark hover:to-sage transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
                 >
-                  <svg className="w-5 h-5 text-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="text-sage-dark font-medium">Add Activity</span>
+                  <span className="font-semibold">Add Activity</span>
                 </button>
                 
                 {/* Show quick actions based on resource types */}

@@ -48,13 +48,15 @@
   }
   
   .btn-primary {
-    background: linear-gradient(to right, var(--color-coral), var(--color-sage));
-    @apply text-white px-6 py-3 rounded-full font-medium transition-all duration-300 hover:-translate-y-0.5;
-    box-shadow: 0 10px 30px rgba(255, 182, 193, 0.3);
+    background: linear-gradient(135deg, #ff7b9c, #87ceeb);
+    @apply text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:-translate-y-0.5;
+    box-shadow: 0 10px 30px rgba(255, 123, 156, 0.4);
   }
   
   .btn-primary:hover {
-    box-shadow: 0 15px 35px rgba(255, 182, 193, 0.4);
+    background: linear-gradient(135deg, #ff6b8c, #6bbce8);
+    box-shadow: 0 15px 40px rgba(255, 123, 156, 0.5);
+    transform: translateY(-2px);
   }
   
   .btn-secondary {
