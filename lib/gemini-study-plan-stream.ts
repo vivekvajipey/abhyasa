@@ -1021,7 +1021,7 @@ Important guidelines:
           const functionResult = await executeFunctionCall(functionCall, context);
           
           // Store the existing goal when loaded
-          if (functionCall.name === 'getGoalContext' && functionResult.success) {
+          if (functionCall.name === 'getGoalContext' && 'success' in functionResult && functionResult.success && 'goal' in functionResult) {
             context.existingGoal = functionResult.goal;
           }
           

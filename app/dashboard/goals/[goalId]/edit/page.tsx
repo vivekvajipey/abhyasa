@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import EditGoalForm from './edit-goal-form'
 
-export default async function EditGoalPage({ params }: { params: { goalId: string } }) {
+export default async function EditGoalPage({ params }: { params: Promise<{ goalId: string }> }) {
+  const { goalId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -21,7 +22,7 @@ export default async function EditGoalPage({ params }: { params: { goalId: strin
         order_index
       )
     `)
-    .eq('id', params.goalId)
+    .eq('id', goalId)
     .eq('user_id', user.id)
     .single()
   

@@ -89,10 +89,10 @@ export interface ActivityProgress {
 
 // Composite types for UI
 export interface GoalWithPhases extends Goal {
-  phases: GoalPhase[];
+  phases: Phase[];
 }
 
-export interface PhaseWithActivities extends GoalPhase {
+export interface PhaseWithActivities extends Phase {
   activities: Activity[];
 }
 

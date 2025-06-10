@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ResourceType } from '@/types/goals'
+import { ResourceType, Priority } from '@/types/goals'
 
 interface PageProps {
   params: Promise<{ goalId: string }>
@@ -73,12 +73,14 @@ export default function AddResourcePage({ params }: PageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState({
     type: 'textbook' as ResourceType,
     title: '',
     author: '',
     url: '',
     notes: '',
+    phase_id: '',
+    priority: 'medium' as Priority,
     // Metadata fields
     total_pages: '',
     total_questions: '',
