@@ -50,15 +50,15 @@ export default async function DashboardPage() {
         <div className="flex space-x-3">
           <Link
             href="/dashboard/goals/new"
-            className="btn-primary"
+            className="btn-secondary"
           >
-            Create New Goal
+            Create Goal Manually
           </Link>
           <Link
             href="/dashboard/goals/import"
             className="btn-primary"
           >
-            Import Study Plan
+            ✨ Create with AI
           </Link>
         </div>
       </div>
@@ -123,15 +123,15 @@ export default async function DashboardPage() {
           <div className="flex gap-4 justify-center">
             <Link
               href="/dashboard/goals/new"
-              className="btn-primary inline-block"
+              className="btn-secondary inline-block"
             >
-              Create New Goal
+              Create Goal Manually
             </Link>
             <Link
               href="/dashboard/goals/import"
-              className="btn-secondary inline-block"
+              className="btn-primary inline-block"
             >
-              Import Study Plan
+              ✨ Create with AI
             </Link>
           </div>
         </div>

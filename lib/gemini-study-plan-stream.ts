@@ -139,9 +139,9 @@ const functionDeclarations: FunctionDeclaration[] = [
         },
         activity_type: {
           type: SchemaType.STRING,
-          description: 'Type of activity',
+          description: 'Type of activity (read for reading, watch for videos, practice for exercises, exam for tests, review for revision, assess for assessments)',
           format: 'enum',
-          enum: ['reading', 'practice', 'review', 'assessment'],
+          enum: ['read', 'watch', 'practice', 'exam', 'review', 'assess', 'other'],
         },
       },
       required: ['phase_id', 'name', 'description', 'order_index'],
