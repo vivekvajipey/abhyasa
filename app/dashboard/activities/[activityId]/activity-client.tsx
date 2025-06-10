@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { updatePhaseStatus } from '@/app/dashboard/goals/[goalId]/phases/[phaseId]/update-phase-status'
+import { deleteActivity } from '@/app/actions/delete-actions'
 
 interface ActivityClientProps {
   activity: any
@@ -17,6 +18,7 @@ export default function ActivityClient({ activity, progress, userId }: ActivityC
   const [isUpdating, setIsUpdating] = useState(false)
   const [currentProgress, setCurrentProgress] = useState(progress)
   const [notes, setNotes] = useState(progress?.notes || '')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   const goalId = activity.phases.goals.id
   const phaseId = activity.phases.id
@@ -352,8 +354,47 @@ export default function ActivityClient({ activity, progress, userId }: ActivityC
               )}
             </div>
           )}
+          
+          {/* Delete Button */}
+          <div className="mt-4">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full px-4 py-2 text-sm text-coral-dark hover:bg-coral/10 rounded-2xl transition-colors"
+            >
+              Delete Activity
+            </button>
+          </div>
         </div>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Delete Activity?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{activity.title}"? This action cannot be undone.
+              All progress data for this activity will be permanently deleted.
+            </p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <form action={deleteActivity.bind(null, activity.id, phaseId, goalId)} className="flex-1">
+                <button
+                  type="submit"
+                  className="w-full px-6 py-3 bg-coral text-white rounded-2xl hover:bg-coral-dark transition-colors"
+                >
+                  Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

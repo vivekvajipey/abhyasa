@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { ProblemTracker } from '@/components/problem-tracker'
 import { ActivityType, ResourceType } from '@/types/goals'
+import { deletePhase } from '@/app/actions/delete-actions'
 
 interface PhaseClientProps {
   phase: any
@@ -23,6 +24,7 @@ export default function PhaseClient({
 }: PhaseClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'resources'>('overview')
   const [selectedResource, setSelectedResource] = useState<any>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   // Calculate phase progress
   const totalActivities = phase.activities?.length || 0
@@ -120,12 +122,20 @@ export default function PhaseClient({
           </div>
         </div>
         
-        <button
-          onClick={() => {/* TODO: Edit phase */}}
-          className="btn-secondary text-sm"
-        >
-          Edit Phase
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => {/* TODO: Edit phase */}}
+            className="btn-secondary text-sm"
+          >
+            Edit Phase
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 text-sm text-coral-dark hover:bg-coral/10 rounded-2xl transition-colors"
+          >
+            Delete Phase
+          </button>
+        </div>
       </div>
 
       {/* Progress Overview */}
@@ -411,6 +421,35 @@ export default function PhaseClient({
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Delete Phase?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{phase.name}"? This action cannot be undone.
+              All activities and progress data in this phase will be permanently deleted.
+            </p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <form action={deletePhase.bind(null, phase.id, goalId)} className="flex-1">
+                <button
+                  type="submit"
+                  className="w-full px-6 py-3 bg-coral text-white rounded-2xl hover:bg-coral-dark transition-colors"
+                >
+                  Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { GoalWithFullDetails } from '@/types/goals'
+import { deleteGoal } from '@/app/actions/delete-actions'
 
 interface GoalClientProps {
   goal: any // TODO: Use proper type after database is set up
@@ -13,6 +14,7 @@ export default function GoalClient({ goal }: GoalClientProps) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab') as 'overview' | 'phases' | 'resources' | null
   const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'resources'>(tabParam || 'overview')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   useEffect(() => {
     if (tabParam) {
@@ -69,12 +71,20 @@ export default function GoalClient({ goal }: GoalClientProps) {
           </div>
         </div>
         
-        <Link
-          href={`/dashboard/goals/${goal.id}/edit`}
-          className="btn-secondary text-sm"
-        >
-          Edit Goal
-        </Link>
+        <div className="flex space-x-3">
+          <Link
+            href={`/dashboard/goals/${goal.id}/edit`}
+            className="btn-secondary text-sm"
+          >
+            Edit Goal
+          </Link>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 text-sm text-coral-dark hover:bg-coral/10 rounded-2xl transition-colors"
+          >
+            Delete Goal
+          </button>
+        </div>
       </div>
 
       {/* Progress Overview */}
@@ -326,6 +336,40 @@ export default function GoalClient({ goal }: GoalClientProps) {
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Delete Goal?</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete "{goal.title}"? This action cannot be undone.
+            </p>
+            <p className="text-sm text-coral-dark mb-6">
+              Warning: This will permanently delete:
+              • {goal.phases?.length || 0} phases
+              • All activities and progress data
+              • All associated resources
+            </p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <form action={deleteGoal.bind(null, goal.id)} className="flex-1">
+                <button
+                  type="submit"
+                  className="w-full px-6 py-3 bg-coral text-white rounded-2xl hover:bg-coral-dark transition-colors"
+                >
+                  Delete Goal
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
