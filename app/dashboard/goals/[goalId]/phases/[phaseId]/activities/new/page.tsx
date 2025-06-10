@@ -17,7 +17,7 @@ export default async function NewActivityPage({
 
   // Verify the phase belongs to the user's goal
   const { data: phase, error } = await supabase
-    .from('goal_phases')
+    .from('phases')
     .select(`
       *,
       goals!inner (

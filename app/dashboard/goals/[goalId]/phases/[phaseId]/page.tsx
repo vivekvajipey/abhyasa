@@ -18,7 +18,7 @@ export default async function PhasePage({
 
   // Fetch phase with activities and resources
   const { data: phase, error } = await supabase
-    .from('goal_phases')
+    .from('phases')
     .select(`
       *,
       activities (
@@ -69,11 +69,7 @@ export default async function PhasePage({
         author,
         url,
         notes,
-        metadata,
-        curricula (
-          id,
-          name
-        )
+        metadata
       )
     `)
     .eq('goal_id', goalId)

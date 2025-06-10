@@ -18,13 +18,13 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
     .from('goals')
     .select(`
       *,
-      goal_phases (
+      phases (
         id,
         name,
         description,
         order_index,
-        target_start_date,
-        target_end_date,
+        start_date,
+        end_date,
         status
       ),
       goal_resources (
@@ -52,8 +52,8 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
   }
 
   // Sort phases by order
-  if (goal.goal_phases) {
-    goal.goal_phases.sort((a: any, b: any) => a.order_index - b.order_index)
+  if (goal.phases) {
+    goal.phases.sort((a: any, b: any) => a.order_index - b.order_index)
   }
 
   return <GoalClient goal={goal} />

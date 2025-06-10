@@ -36,7 +36,7 @@ export default function NewPhasePage({ params }: PageProps) {
   const fetchExistingPhases = async (gId: string) => {
     const supabase = createClient()
     const { count } = await supabase
-      .from('goal_phases')
+      .from('phases')
       .select('*', { count: 'exact', head: true })
       .eq('goal_id', gId)
     
@@ -55,13 +55,13 @@ export default function NewPhasePage({ params }: PageProps) {
       
       // Create the phase
       const { data: phase, error: phaseError } = await supabase
-        .from('goal_phases')
+        .from('phases')
         .insert({
           goal_id: goalId,
           name: formData.name,
           description: formData.description || null,
-          target_start_date: formData.target_start_date || null,
-          target_end_date: formData.target_end_date || null,
+          start_date: formData.target_start_date || null,
+          end_date: formData.target_end_date || null,
           status: formData.status,
           order_index: existingPhases
         })

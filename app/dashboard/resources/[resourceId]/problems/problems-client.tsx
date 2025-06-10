@@ -117,7 +117,7 @@ export default function ProblemsClient({
       const response = await fetch('/api/problems/generate-similar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ problemId, sectionId: resource.id })
+        body: JSON.stringify({ problemId, resourceId: resource.id })
       })
 
       if (response.ok) {
@@ -139,7 +139,7 @@ export default function ProblemsClient({
               created_at
             )
           `)
-          .eq('section_id', resource.id)
+          .eq('resource_id', resource.id)
           .order('problem_number')
 
         if (updatedProblems) {
@@ -195,7 +195,7 @@ export default function ProblemsClient({
               created_at
             )
           `)
-          .eq('section_id', resource.id)
+          .eq('resource_id', resource.id)
           .order('problem_number')
 
         if (updatedProblems) {

@@ -20,8 +20,8 @@ export default function GoalClient({ goal }: GoalClientProps) {
     }
   }, [tabParam])
   
-  const completedPhases = goal.goal_phases?.filter((p: any) => p.status === 'completed').length || 0
-  const totalPhases = goal.goal_phases?.length || 0
+  const completedPhases = goal.phases?.filter((p: any) => p.status === 'completed').length || 0
+  const totalPhases = goal.phases?.length || 0
   const progressPercentage = totalPhases > 0 ? (completedPhases / totalPhases) * 100 : 0
 
   return (
