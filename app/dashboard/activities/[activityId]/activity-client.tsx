@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { updatePhaseStatus } from '@/app/dashboard/goals/[goalId]/phases/[phaseId]/update-phase-status'
 
 interface ActivityClientProps {
   activity: any
@@ -52,6 +53,8 @@ export default function ActivityClient({ activity, progress, userId }: ActivityC
       
       if (!error) {
         setCurrentProgress(data)
+        // Update phase status after activity progress change
+        await updatePhaseStatus(phaseId)
       }
     } else {
       // Update existing progress
@@ -64,6 +67,8 @@ export default function ActivityClient({ activity, progress, userId }: ActivityC
       
       if (!error) {
         setCurrentProgress(data)
+        // Update phase status after activity progress change
+        await updatePhaseStatus(phaseId)
       }
     }
     

@@ -93,9 +93,43 @@ export default async function PhasePage({
     phase.activities.sort((a: any, b: any) => a.order_index - b.order_index)
   }
 
+  // Calculate phase status based on activity progress
+  let computedPhaseStatus = phase.status
+  if (phase.activities && phase.activities.length > 0) {
+    let allCompleted = true
+    let anyStarted = false
+    
+    for (const activity of phase.activities) {
+      const progress = progressMap[activity.id]
+      const status = progress?.status || 'not_started'
+      
+      if (status !== 'completed') {
+        allCompleted = false
+      }
+      
+      if (status === 'in_progress' || status === 'completed') {
+        anyStarted = true
+      }
+    }
+    
+    if (allCompleted) {
+      computedPhaseStatus = 'completed'
+    } else if (anyStarted) {
+      computedPhaseStatus = 'in_progress'
+    } else {
+      computedPhaseStatus = 'not_started'
+    }
+    
+    // Update phase status if it differs from computed
+    if (computedPhaseStatus !== phase.status) {
+      const { updatePhaseStatus } = await import('./update-phase-status')
+      await updatePhaseStatus(phaseId)
+    }
+  }
+
   return (
     <PhaseClient 
-      phase={phase}
+      phase={{...phase, status: computedPhaseStatus}}
       phaseResources={phaseResources || []}
       activityProgress={progressMap}
       goalId={goalId}
