@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { LogoutButton } from '@/components/auth/logout-button'
 
 export default async function DashboardLayout({
@@ -28,7 +29,9 @@ export default async function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold gradient-text" style={{ fontFamily: 'Quicksand, sans-serif' }}>Abhyasa</h1>
+              <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-bold gradient-text" style={{ fontFamily: 'Quicksand, sans-serif' }}>Abhyasa</h1>
+              </Link>
             </div>
             <div className="flex items-center space-x-6">
               <span className="text-sm text-gray-600 font-medium">{user.email}</span>
