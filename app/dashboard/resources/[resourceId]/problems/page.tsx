@@ -46,7 +46,7 @@ export default async function ProblemsPage({
         created_at
       )
     `)
-    .eq('section_id', resourceId)
+    .eq('resource_id', resourceId)
     .order('problem_number')
 
   // Filter progress and hints for current user

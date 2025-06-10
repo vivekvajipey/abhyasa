@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { ProblemTracker } from '@/components/problem-tracker'
 import { ActivityType, ResourceType } from '@/types/goals'
+import { deletePhase } from '@/app/actions/delete-actions'
 
 interface PhaseClientProps {
   phase: any
@@ -23,6 +24,7 @@ export default function PhaseClient({
 }: PhaseClientProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'resources'>('overview')
   const [selectedResource, setSelectedResource] = useState<any>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   
   // Calculate phase progress
   const totalActivities = phase.activities?.length || 0
@@ -98,14 +100,14 @@ export default function PhaseClient({
           )}
           
           <div className="flex items-center space-x-6 mt-4">
-            {phase.target_start_date && (
+            {phase.start_date && (
               <div className="flex items-center space-x-2 text-gray-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span>
-                  {new Date(phase.target_start_date).toLocaleDateString()} - 
-                  {phase.target_end_date ? new Date(phase.target_end_date).toLocaleDateString() : 'Ongoing'}
+                  {new Date(phase.start_date).toLocaleDateString()} - 
+                  {phase.end_date ? new Date(phase.end_date).toLocaleDateString() : 'Ongoing'}
                 </span>
               </div>
             )}
@@ -120,12 +122,20 @@ export default function PhaseClient({
           </div>
         </div>
         
-        <button
-          onClick={() => {/* TODO: Edit phase */}}
-          className="btn-secondary text-sm"
-        >
-          Edit Phase
-        </button>
+        <div className="flex space-x-3">
+          <Link
+            href={`/dashboard/goals/${goalId}/phases/${phase.id}/edit`}
+            className="btn-secondary text-sm"
+          >
+            Edit Phase
+          </Link>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 text-sm text-coral-dark hover:bg-coral/10 rounded-2xl transition-colors"
+          >
+            Delete Phase
+          </button>
+        </div>
       </div>
 
       {/* Progress Overview */}
@@ -256,11 +266,18 @@ export default function PhaseClient({
                 const progress = activityProgress[activity.id]
                 const isCompleted = progress?.status === 'completed'
                 
+                const handleActivityClick = (e?: React.MouseEvent) => {
+                  if (e) e.stopPropagation()
+                  // Navigate to the activity page
+                  window.location.href = `/dashboard/activities/${activity.id}`
+                }
+                
                 return (
                   <div
                     key={activity.id}
-                    className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 hover:shadow-medium transition-all animate-slide-up"
+                    className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 hover:shadow-medium transition-all animate-slide-up cursor-pointer"
                     style={{ animationDelay: `${index * 0.1}s` }}
+                    onClick={handleActivityClick}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -291,39 +308,16 @@ export default function PhaseClient({
                               <span>{activity.resources.title}</span>
                             </span>
                           )}
-                          {activity.target_score && (
-                            <span>Target: {activity.target_score}%</span>
+                          {activity.metadata?.target_score && (
+                            <span>Target: {activity.metadata.target_score}%</span>
                           )}
                         </div>
                       </div>
                       
                       <button
-                        onClick={async () => {
-                          // Navigate based on activity type and resource
-                          if (activity.resources) {
-                            if (activity.type === 'exam' && activity.resources.type === 'practice_exam') {
-                              handleStartExam(activity.resources.id)
-                            } else if (activity.type === 'practice' && activity.resources.type === 'problem_set') {
-                              handleViewProblemSet(activity.resources.id)
-                            } else if (activity.type === 'read' && ['reading', 'textbook', 'reference'].includes(activity.resources.type)) {
-                              handleReadingProgress(activity.resources.id)
-                            } else if (activity.resources.url) {
-                              window.open(activity.resources.url, '_blank')
-                            }
-                          }
-                          
-                          // Mark activity as in progress if not started
-                          if (!progress || progress.status === 'not_started') {
-                            const supabase = createClient()
-                            await supabase
-                              .from('activity_progress')
-                              .upsert({
-                                user_id: userId,
-                                activity_id: activity.id,
-                                status: 'in_progress',
-                                started_at: new Date().toISOString()
-                              })
-                          }
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleActivityClick(e)
                         }}
                         className={`px-4 py-2 rounded-2xl font-medium transition-all ${
                           isCompleted 
@@ -402,18 +396,10 @@ export default function PhaseClient({
                             )}
                           </div>
                           
-                          {resource.notes && (
-                            <p className="text-gray-600 mt-2 text-sm">{resource.notes}</p>
+                          {resource.description && (
+                            <p className="text-gray-600 mt-2 text-sm">{resource.description}</p>
                           )}
                         </div>
-                        
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          pr.priority === 'high' ? 'bg-coral/20 text-coral-dark' :
-                          pr.priority === 'medium' ? 'bg-sage/20 text-sage-dark' :
-                          'bg-gray-200 text-gray-600'
-                        }`}>
-                          {pr.priority} priority
-                        </span>
                       </div>
                     </div>
                   )
@@ -435,6 +421,35 @@ export default function PhaseClient({
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Delete Phase?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{phase.name}"? This action cannot be undone.
+              All activities and progress data in this phase will be permanently deleted.
+            </p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <form action={deletePhase.bind(null, phase.id, goalId)} className="flex-1">
+                <button
+                  type="submit"
+                  className="w-full px-6 py-3 bg-coral text-white rounded-2xl hover:bg-coral-dark transition-colors"
+                >
+                  Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

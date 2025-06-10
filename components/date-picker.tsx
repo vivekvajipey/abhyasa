@@ -23,9 +23,18 @@ export function DatePicker({
 }: DatePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleContainerClick = () => {
-    // Trigger the native date picker
-    inputRef.current?.showPicker?.() || inputRef.current?.click()
+  const handleContainerClick = (e: React.MouseEvent) => {
+    // Only try showPicker if it's a direct user interaction
+    try {
+      if (inputRef.current?.showPicker) {
+        inputRef.current.showPicker()
+      } else {
+        inputRef.current?.click()
+      }
+    } catch (error) {
+      // Fallback to click if showPicker fails
+      inputRef.current?.click()
+    }
   }
 
   // Format date for display

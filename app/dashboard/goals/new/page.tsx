@@ -3,9 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { GoalStatus } from '@/types/goals'
-import { DatePicker } from '@/components/date-picker'
+import { createGoal } from '@/app/actions/goal-actions'
 
 export default function NewGoalPage() {
   const router = useRouter()
@@ -16,7 +14,8 @@ export default function NewGoalPage() {
     title: '',
     description: '',
     target_date: '',
-    status: 'active' as GoalStatus
+    start_date: '',
+    daily_commitment_hours: ''
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,31 +24,20 @@ export default function NewGoalPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        throw new Error('Not authenticated')
+      const result = await createGoal({
+        title: formData.title,
+        description: formData.description || undefined,
+        target_date: formData.target_date || undefined,
+        start_date: formData.start_date || undefined,
+        daily_commitment_hours: formData.daily_commitment_hours ? parseFloat(formData.daily_commitment_hours) : undefined
+      })
+
+      if (result.error) {
+        setError(result.error)
+      } else if (result.data) {
+        // Redirect to the new goal page
+        router.push(`/dashboard/goals/${result.data.id}`)
       }
-
-      // Create the goal
-      const { data: goal, error: goalError } = await supabase
-        .from('goals')
-        .insert({
-          user_id: user.id,
-          title: formData.title,
-          description: formData.description || null,
-          target_date: formData.target_date || null,
-          status: formData.status
-        })
-        .select()
-        .single()
-
-      if (goalError) throw goalError
-
-      // Redirect to the new goal page
-      router.push(`/dashboard/goals/${goal.id}`)
     } catch (err) {
       console.error('Error creating goal:', err)
       setError(err instanceof Error ? err.message : 'Failed to create goal')
@@ -114,14 +102,48 @@ export default function NewGoalPage() {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="start_date" className="block text-sm font-semibold text-gray-700 mb-2">
+              Start Date
+            </label>
+            <input
+              type="date"
+              id="start_date"
+              value={formData.start_date}
+              onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+              className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-sage focus:outline-none transition-colors"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="target_date" className="block text-sm font-semibold text-gray-700 mb-2">
+              Target Date
+            </label>
+            <input
+              type="date"
+              id="target_date"
+              value={formData.target_date}
+              onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
+              className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-sage focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+        
         <div>
-          <label htmlFor="target_date" className="block text-sm font-semibold text-gray-700 mb-2">
-            Target Date
+          <label htmlFor="daily_commitment" className="block text-sm font-semibold text-gray-700 mb-2">
+            Daily Commitment (hours)
           </label>
-          <DatePicker
-            id="target_date"
-            value={formData.target_date}
-            onChange={(value) => setFormData({ ...formData, target_date: value })}
+          <input
+            type="number"
+            id="daily_commitment"
+            value={formData.daily_commitment_hours}
+            onChange={(e) => setFormData({ ...formData, daily_commitment_hours: e.target.value })}
+            step="0.5"
+            min="0"
+            max="24"
+            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-sage focus:outline-none transition-colors"
+            placeholder="e.g., 2.5"
           />
         </div>
 

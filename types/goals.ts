@@ -18,7 +18,7 @@ export interface Goal {
   updated_at: string;
 }
 
-export interface GoalPhase {
+export interface Phase {
   id: string;
   goal_id: string;
   name: string;
@@ -141,7 +141,7 @@ export interface ReadingProgress {
   id: string;
   user_id: string;
   resource_id: string;
-  pages_read: number;
+  current_page: number;
   total_pages?: number;
   reading_time_minutes: number;
   completed: boolean;
