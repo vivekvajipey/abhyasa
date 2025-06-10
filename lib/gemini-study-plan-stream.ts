@@ -148,6 +148,138 @@ const functionDeclarations: FunctionDeclaration[] = [
     },
   },
   {
+    name: 'updateGoal',
+    description: 'Update an existing goal',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        goal_id: {
+          type: SchemaType.STRING,
+          description: 'ID of the goal to update',
+        },
+        title: {
+          type: SchemaType.STRING,
+          description: 'New title (optional)',
+        },
+        description: {
+          type: SchemaType.STRING,
+          description: 'New description (optional)',
+        },
+        target_date: {
+          type: SchemaType.STRING,
+          description: 'New target date in ISO format (optional)',
+        },
+        daily_commitment_hours: {
+          type: SchemaType.NUMBER,
+          description: 'New daily commitment in hours (optional)',
+        },
+      },
+      required: ['goal_id'],
+    },
+  },
+  {
+    name: 'updatePhase',
+    description: 'Update an existing phase',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        phase_id: {
+          type: SchemaType.STRING,
+          description: 'ID of the phase to update',
+        },
+        name: {
+          type: SchemaType.STRING,
+          description: 'New name (optional)',
+        },
+        description: {
+          type: SchemaType.STRING,
+          description: 'New description (optional)',
+        },
+        start_date: {
+          type: SchemaType.STRING,
+          description: 'New start date in ISO format (optional)',
+        },
+        end_date: {
+          type: SchemaType.STRING,
+          description: 'New end date in ISO format (optional)',
+        },
+      },
+      required: ['phase_id'],
+    },
+  },
+  {
+    name: 'updateActivity',
+    description: 'Update an existing activity',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        activity_id: {
+          type: SchemaType.STRING,
+          description: 'ID of the activity to update',
+        },
+        title: {
+          type: SchemaType.STRING,
+          description: 'New title (optional)',
+        },
+        description: {
+          type: SchemaType.STRING,
+          description: 'New description (optional)',
+        },
+        estimated_hours: {
+          type: SchemaType.NUMBER,
+          description: 'New estimated hours (optional)',
+        },
+        resource_id: {
+          type: SchemaType.STRING,
+          description: 'New resource ID (optional)',
+        },
+      },
+      required: ['activity_id'],
+    },
+  },
+  {
+    name: 'deletePhase',
+    description: 'Delete a phase and all its activities',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        phase_id: {
+          type: SchemaType.STRING,
+          description: 'ID of the phase to delete',
+        },
+      },
+      required: ['phase_id'],
+    },
+  },
+  {
+    name: 'deleteActivity',
+    description: 'Delete an activity',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        activity_id: {
+          type: SchemaType.STRING,
+          description: 'ID of the activity to delete',
+        },
+      },
+      required: ['activity_id'],
+    },
+  },
+  {
+    name: 'getGoalContext',
+    description: 'Get current state of a goal with all phases, activities, and resources',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        goal_id: {
+          type: SchemaType.STRING,
+          description: 'ID of the goal to retrieve',
+        },
+      },
+      required: ['goal_id'],
+    },
+  },
+  {
     name: 'getCreatedEntities',
     description: 'Get summary of all created entities',
     parameters: {
@@ -158,7 +290,7 @@ const functionDeclarations: FunctionDeclaration[] = [
 ];
 
 export interface StudyPlanEvent {
-  type: 'start' | 'thinking' | 'creating' | 'created' | 'error' | 'complete' | 'question';
+  type: 'start' | 'thinking' | 'creating' | 'created' | 'updating' | 'updated' | 'deleting' | 'deleted' | 'error' | 'complete' | 'question';
   entity?: 'goal' | 'phase' | 'resource' | 'activity';
   data?: any;
   message?: string;
@@ -171,10 +303,14 @@ export interface StudyPlanEvent {
 
 interface StudyPlanContext {
   userId: string;
+  mode?: 'create' | 'edit';
+  existingGoal?: any;
   createdGoal: any;
   createdPhases: any[];
   createdResources: any[];
   createdActivities: any[];
+  updatedEntities: any[];
+  deletedEntities: any[];
   onEvent?: (event: StudyPlanEvent) => void;
   logger?: GeminiDevLogger;
   chat?: any;
@@ -190,13 +326,19 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
   // Log tool call
   await context.logger?.logToolCall(name, args, null, 0);
   
-  // Emit creating event
-  context.onEvent?.({
-    type: 'creating',
-    entity: name.replace('create', '').toLowerCase() as any,
-    data: args,
-    message: `Creating ${name.replace('create', '').toLowerCase()}: ${args.title || args.name}`,
-  });
+  // Emit appropriate event based on operation type
+  const isUpdate = name.startsWith('update');
+  const isDelete = name.startsWith('delete');
+  const isGet = name.startsWith('get');
+  
+  if (!isGet) {
+    context.onEvent?.({
+      type: isUpdate ? 'updating' : isDelete ? 'deleting' : 'creating',
+      entity: name.replace(/^(create|update|delete)/, '').toLowerCase() as any,
+      data: args,
+      message: `${isUpdate ? 'Updating' : isDelete ? 'Deleting' : 'Creating'} ${name.replace(/^(create|update|delete)/, '').toLowerCase()}: ${args.title || args.name || args.goal_id || args.phase_id || args.activity_id}`,
+    });
+  }
   
   try {
     switch (name) {
@@ -332,12 +474,180 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
         return result;
       }
       
+      case 'updateGoal': {
+        const updateData: any = {};
+        if (args.title) updateData.title = args.title;
+        if (args.description) updateData.description = args.description;
+        if (args.target_date) updateData.target_date = args.target_date;
+        if (args.daily_commitment_hours) updateData.daily_commitment_hours = args.daily_commitment_hours;
+        
+        const { data, error } = await supabase
+          .from('goals')
+          .update(updateData)
+          .eq('id', args.goal_id)
+          .eq('user_id', context.userId)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        context.updatedEntities.push({ type: 'goal', data });
+        
+        context.onEvent?.({
+          type: 'updated',
+          entity: 'goal',
+          data: data,
+          message: `Updated goal: ${data.title}`,
+        });
+        
+        const result = { success: true, goalId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
+      }
+      
+      case 'updatePhase': {
+        const updateData: any = {};
+        if (args.name) updateData.name = args.name;
+        if (args.description) updateData.description = args.description;
+        if (args.start_date) updateData.start_date = args.start_date;
+        if (args.end_date) updateData.end_date = args.end_date;
+        
+        const { data, error } = await supabase
+          .from('phases')
+          .update(updateData)
+          .eq('id', args.phase_id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        context.updatedEntities.push({ type: 'phase', data });
+        
+        context.onEvent?.({
+          type: 'updated',
+          entity: 'phase',
+          data: data,
+          message: `Updated phase: ${data.name}`,
+        });
+        
+        const result = { success: true, phaseId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
+      }
+      
+      case 'updateActivity': {
+        const updateData: any = {};
+        if (args.title) updateData.title = args.title;
+        if (args.description) updateData.description = args.description;
+        if (args.estimated_hours) updateData.estimated_hours = args.estimated_hours;
+        if (args.resource_id) updateData.resource_id = args.resource_id;
+        
+        const { data, error } = await supabase
+          .from('activities')
+          .update(updateData)
+          .eq('id', args.activity_id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        context.updatedEntities.push({ type: 'activity', data });
+        
+        context.onEvent?.({
+          type: 'updated',
+          entity: 'activity',
+          data: data,
+          message: `Updated activity: ${data.title}`,
+        });
+        
+        const result = { success: true, activityId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
+      }
+      
+      case 'deletePhase': {
+        const { error } = await supabase
+          .from('phases')
+          .delete()
+          .eq('id', args.phase_id);
+        
+        if (error) throw error;
+        context.deletedEntities.push({ type: 'phase', id: args.phase_id });
+        
+        context.onEvent?.({
+          type: 'deleted',
+          entity: 'phase',
+          data: { id: args.phase_id },
+          message: `Deleted phase`,
+        });
+        
+        const result = { success: true, phaseId: args.phase_id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
+      }
+      
+      case 'deleteActivity': {
+        const { error } = await supabase
+          .from('activities')
+          .delete()
+          .eq('id', args.activity_id);
+        
+        if (error) throw error;
+        context.deletedEntities.push({ type: 'activity', id: args.activity_id });
+        
+        context.onEvent?.({
+          type: 'deleted',
+          entity: 'activity',
+          data: { id: args.activity_id },
+          message: `Deleted activity`,
+        });
+        
+        const result = { success: true, activityId: args.activity_id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
+      }
+      
+      case 'getGoalContext': {
+        // Fetch goal with all related data
+        const { data: goal, error } = await supabase
+          .from('goals')
+          .select(`
+            *,
+            phases (
+              *,
+              activities (
+                *,
+                resources (*)
+              )
+            ),
+            goal_resources (
+              *,
+              resources (*)
+            )
+          `)
+          .eq('id', args.goal_id)
+          .eq('user_id', context.userId)
+          .single();
+        
+        if (error) throw error;
+        
+        const result = {
+          success: true,
+          goal: goal,
+          phases: goal.phases || [],
+          resources: goal.goal_resources?.map((gr: any) => gr.resources) || [],
+          totalActivities: goal.phases?.reduce((sum: number, phase: any) => sum + (phase.activities?.length || 0), 0) || 0
+        };
+        
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
+      }
+      
       case 'getCreatedEntities': {
         const result = {
-          goal: context.createdGoal,
+          goal: context.createdGoal || context.existingGoal,
           phases: context.createdPhases.length,
           resources: context.createdResources.length,
           activities: context.createdActivities.length,
+          updates: context.updatedEntities.length,
+          deletions: context.deletedEntities.length,
         };
         await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
         return result;
@@ -384,10 +694,14 @@ export async function parseStudyPlanWithStream(
   
   const context: StudyPlanContext = previousContext || {
     userId,
+    mode: 'create',
+    existingGoal: null,
     createdGoal: null,
     createdPhases: [],
     createdResources: [],
     createdActivities: [],
+    updatedEntities: [],
+    deletedEntities: [],
     onEvent,
     logger,
     conversationId: conversationId || crypto.randomUUID(),
@@ -570,6 +884,222 @@ ${studyPlanText}`;
     onEvent({
       type: 'error',
       message: `Failed to import study plan: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    });
+    throw error;
+  }
+}
+
+// Function to edit an existing goal
+export async function editGoalWithAI(
+  goalId: string,
+  editRequest: string,
+  userId: string,
+  onEvent: (event: StudyPlanEvent) => void,
+  enableDevLogging: boolean = false
+) {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-pro-preview-06-05',
+    tools: [{ functionDeclarations }],
+  });
+  
+  // Initialize logger if enabled
+  let logger: GeminiDevLogger | undefined;
+  if (enableDevLogging) {
+    logger = new GeminiDevLogger();
+    await logger.init();
+    await logger.logInfo('Starting goal edit', {
+      goalId,
+      userId,
+      editRequestLength: editRequest.length,
+      model: 'gemini-2.5-pro-preview-06-05'
+    });
+  }
+  
+  const context: StudyPlanContext = {
+    userId,
+    mode: 'edit',
+    existingGoal: null,
+    createdGoal: null,
+    createdPhases: [],
+    createdResources: [],
+    createdActivities: [],
+    updatedEntities: [],
+    deletedEntities: [],
+    onEvent,
+    logger,
+    conversationId: crypto.randomUUID(),
+  };
+  
+  onEvent({
+    type: 'start',
+    message: 'Loading your goal and analyzing edit request...',
+  });
+  
+  const systemPrompt = `You are an expert educational planner. Your task is to modify an existing learning goal based on the user's request.
+
+First, use getGoalContext to understand the current state of the goal. Then apply the requested changes using the update, create, and delete functions as needed.
+
+The user's goal ID is: ${goalId}
+
+The user's edit request is:
+${editRequest}
+
+Important guidelines:
+- First call getGoalContext to load the current goal state
+- Preserve existing data unless explicitly asked to change it
+- When adding new phases, respect the existing order_index values
+- When adding activities, maintain logical ordering within phases
+- Only delete items if explicitly requested
+- Create new resources as needed for new activities
+- Provide clear feedback about what changes were made`;
+  
+  onEvent({
+    type: 'thinking',
+    message: 'Loading your goal data and understanding the requested changes...',
+  });
+  
+  try {
+    const chat = model.startChat();
+    context.chat = chat;
+    
+    // Send initial prompt
+    const requestId = await logger?.logRequest('gemini-2.5-pro-preview-06-05', systemPrompt, {
+      goalId,
+      mode: 'edit'
+    });
+    
+    const requestStartTime = Date.now();
+    let result = await chat.sendMessage(systemPrompt);
+    
+    await logger?.logResponse(
+      requestId || '',
+      result.response.text() || '',
+      result.response.functionCalls(),
+      Date.now() - requestStartTime
+    );
+    
+    // Process function calls
+    let iterations = 0;
+    const maxIterations = 50;
+    
+    while (iterations < maxIterations) {
+      iterations++;
+      
+      const functionCalls = result.response.functionCalls();
+      const responseText = result.response.text();
+      
+      if (!functionCalls || functionCalls.length === 0) {
+        if (responseText && responseText.length > 0) {
+          // AI might be asking for clarification
+          onEvent({
+            type: 'question',
+            message: responseText,
+            conversationId: context.conversationId,
+            data: { context }
+          });
+          
+          return {
+            success: false,
+            needsResponse: true,
+            question: responseText,
+            conversationId: context.conversationId,
+            context,
+          };
+        }
+        break;
+      }
+      
+      onEvent({
+        type: 'thinking',
+        message: `Processing ${functionCalls.length} actions...`,
+      });
+      
+      // Execute function calls
+      const functionResponses = [];
+      for (const functionCall of functionCalls) {
+        try {
+          const functionResult = await executeFunctionCall(functionCall, context);
+          
+          // Store the existing goal when loaded
+          if (functionCall.name === 'getGoalContext' && functionResult.success) {
+            context.existingGoal = functionResult.goal;
+          }
+          
+          functionResponses.push({
+            functionResponse: {
+              name: functionCall.name,
+              response: functionResult,
+            },
+          });
+        } catch (error) {
+          functionResponses.push({
+            functionResponse: {
+              name: functionCall.name,
+              response: { error: error instanceof Error ? error.message : 'Unknown error' },
+            },
+          });
+        }
+      }
+      
+      // Continue conversation
+      const contRequestId = await logger?.logRequest(
+        'gemini-2.5-pro-preview-06-05',
+        JSON.stringify(functionResponses),
+        { iteration: iterations, type: 'function_responses' }
+      );
+      
+      const contStartTime = Date.now();
+      result = await chat.sendMessage(functionResponses);
+      
+      await logger?.logResponse(
+        contRequestId || '',
+        result.response.text() || '',
+        result.response.functionCalls(),
+        Date.now() - contStartTime
+      );
+    }
+    
+    onEvent({
+      type: 'complete',
+      message: 'Goal update completed successfully!',
+      data: {
+        goal: context.existingGoal,
+        newPhasesCount: context.createdPhases.length,
+        newResourcesCount: context.createdResources.length,
+        newActivitiesCount: context.createdActivities.length,
+        updatesCount: context.updatedEntities.length,
+        deletionsCount: context.deletedEntities.length,
+      },
+    });
+    
+    const finalSummary = {
+      goal: context.existingGoal,
+      newPhasesCount: context.createdPhases.length,
+      newResourcesCount: context.createdResources.length,
+      newActivitiesCount: context.createdActivities.length,
+      updatesCount: context.updatedEntities.length,
+      deletionsCount: context.deletedEntities.length,
+    };
+    
+    await logger?.logInfo('Goal edit completed', {
+      ...finalSummary,
+      totalIterations: iterations,
+      loggerSummary: logger?.getSummary()
+    });
+    
+    return {
+      success: true,
+      summary: finalSummary,
+      devLogPath: logger?.getLogPath(),
+      devLogSessionId: logger?.getSessionId(),
+      conversationId: context.conversationId,
+    };
+  } catch (error) {
+    await logger?.logError(error, 'Goal edit failed');
+    
+    onEvent({
+      type: 'error',
+      message: `Failed to edit goal: ${error instanceof Error ? error.message : 'Unknown error'}`,
     });
     throw error;
   }

@@ -73,10 +73,16 @@ export default function GoalClient({ goal }: GoalClientProps) {
         
         <div className="flex space-x-3">
           <Link
+            href={`/dashboard/goals/${goal.id}/edit-with-ai`}
+            className="btn-primary text-sm"
+          >
+            ✨ Edit with AI
+          </Link>
+          <Link
             href={`/dashboard/goals/${goal.id}/edit`}
             className="btn-secondary text-sm"
           >
-            Edit Goal
+            Manual Edit
           </Link>
           <button
             onClick={() => setShowDeleteConfirm(true)}

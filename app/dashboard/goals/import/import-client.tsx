@@ -7,7 +7,7 @@ import { examplePlans } from './example-plans';
 import { simpleTestPlan, minimalTestPlan } from './simple-test-plan';
 
 interface StudyPlanEvent {
-  type: 'start' | 'thinking' | 'creating' | 'created' | 'error' | 'complete' | 'question';
+  type: 'start' | 'thinking' | 'creating' | 'created' | 'updating' | 'updated' | 'deleting' | 'deleted' | 'error' | 'complete' | 'question';
   entity?: 'goal' | 'phase' | 'resource' | 'activity';
   data?: any;
   message?: string;
