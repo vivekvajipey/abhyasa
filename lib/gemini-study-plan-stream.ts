@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, SchemaType, FunctionDeclaration } from '@google/generative-ai';
 import { createClient } from '@/lib/supabase/server';
+import { GeminiDevLogger } from './gemini-dev-logger';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -174,12 +175,17 @@ interface StudyPlanContext {
   createdResources: any[];
   createdActivities: any[];
   onEvent?: (event: StudyPlanEvent) => void;
+  logger?: GeminiDevLogger;
 }
 
 // Function to execute the actual database operations
 async function executeFunctionCall(functionCall: any, context: StudyPlanContext) {
   const { name, args } = functionCall;
   const supabase = await createClient();
+  const startTime = Date.now();
+  
+  // Log tool call
+  await context.logger?.logToolCall(name, args, null, 0);
   
   // Emit creating event
   context.onEvent?.({
@@ -215,7 +221,9 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
           message: `Created goal: ${data.title}`,
         });
         
-        return { success: true, goalId: data.id };
+        const result = { success: true, goalId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
       }
       
       case 'createPhase': {
@@ -246,7 +254,9 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
           },
         });
         
-        return { success: true, phaseId: data.id };
+        const result = { success: true, phaseId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
       }
       
       case 'createResource': {
@@ -280,7 +290,9 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
           },
         });
         
-        return { success: true, resourceId: data.id };
+        const result = { success: true, resourceId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
       }
       
       case 'createActivity': {
@@ -312,16 +324,20 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
           },
         });
         
-        return { success: true, activityId: data.id };
+        const result = { success: true, activityId: data.id };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
       }
       
       case 'getCreatedEntities': {
-        return {
+        const result = {
           goal: context.createdGoal,
           phases: context.createdPhases.length,
           resources: context.createdResources.length,
           activities: context.createdActivities.length,
         };
+        await context.logger?.logToolCall(name, args, result, Date.now() - startTime);
+        return result;
       }
       
       default:
@@ -341,12 +357,25 @@ async function executeFunctionCall(functionCall: any, context: StudyPlanContext)
 export async function parseStudyPlanWithStream(
   studyPlanText: string, 
   userId: string,
-  onEvent: (event: StudyPlanEvent) => void
+  onEvent: (event: StudyPlanEvent) => void,
+  enableDevLogging: boolean = false
 ) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-pro-preview-06-05',
     tools: [{ functionDeclarations }],
   });
+  
+  // Initialize logger if enabled
+  let logger: GeminiDevLogger | undefined;
+  if (enableDevLogging) {
+    logger = new GeminiDevLogger();
+    await logger.init();
+    await logger.logInfo('Starting study plan import', {
+      userId,
+      studyPlanLength: studyPlanText.length,
+      model: 'gemini-2.5-pro-preview-06-05'
+    });
+  }
   
   const context: StudyPlanContext = {
     userId,
@@ -355,6 +384,7 @@ export async function parseStudyPlanWithStream(
     createdResources: [],
     createdActivities: [],
     onEvent,
+    logger,
   };
   
   onEvent({
@@ -392,8 +422,22 @@ ${studyPlanText}`;
     let iterations = 0;
     const maxIterations = 50; // Safety limit
     
+    // Log initial request
+    const requestId = await logger?.logRequest('gemini-2.5-pro-preview-06-05', systemPrompt, {
+      functionDeclarations: functionDeclarations.map(f => ({ name: f.name, description: f.description }))
+    });
+    
     // Send the initial prompt
+    const requestStartTime = Date.now();
     let result = await chat.sendMessage(systemPrompt);
+    
+    // Log initial response
+    await logger?.logResponse(
+      requestId || '', 
+      result.response.text() || '', 
+      result.response.functionCalls(),
+      Date.now() - requestStartTime
+    );
     
     // Process function calls in a loop
     while (iterations < maxIterations) {
@@ -431,8 +475,24 @@ ${studyPlanText}`;
         }
       }
       
+      // Log continuation request
+      const contRequestId = await logger?.logRequest(
+        'gemini-2.5-pro-preview-06-05', 
+        JSON.stringify(functionResponses),
+        { iteration: iterations, type: 'function_responses' }
+      );
+      
       // Send function responses back to continue the conversation
+      const contStartTime = Date.now();
       result = await chat.sendMessage(functionResponses);
+      
+      // Log continuation response
+      await logger?.logResponse(
+        contRequestId || '', 
+        result.response.text() || '', 
+        result.response.functionCalls(),
+        Date.now() - contStartTime
+      );
     }
     
     onEvent({
@@ -446,16 +506,30 @@ ${studyPlanText}`;
       },
     });
     
+    const finalSummary = {
+      goal: context.createdGoal,
+      phasesCount: context.createdPhases.length,
+      resourcesCount: context.createdResources.length,
+      activitiesCount: context.createdActivities.length,
+    };
+    
+    // Log final summary
+    await logger?.logInfo('Study plan import completed', {
+      ...finalSummary,
+      totalIterations: iterations,
+      loggerSummary: logger?.getSummary()
+    });
+    
     return {
       success: true,
-      summary: {
-        goal: context.createdGoal,
-        phasesCount: context.createdPhases.length,
-        resourcesCount: context.createdResources.length,
-        activitiesCount: context.createdActivities.length,
-      },
+      summary: finalSummary,
+      devLogPath: logger?.getLogPath(),
+      devLogSessionId: logger?.getSessionId(),
     };
   } catch (error) {
+    // Log error
+    await logger?.logError(error, 'Study plan import failed');
+    
     onEvent({
       type: 'error',
       message: `Failed to import study plan: ${error instanceof Error ? error.message : 'Unknown error'}`,

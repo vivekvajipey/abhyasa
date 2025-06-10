@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   // Ensure user exists in our database
   await ensureUserExists(supabase, user.id, user.email!);
   
-  const { studyPlan } = await request.json();
+  const { studyPlan, enableDevLogging } = await request.json();
   
   if (!studyPlan || typeof studyPlan !== 'string') {
     return new Response(JSON.stringify({ error: 'Study plan text is required' }), {
@@ -38,13 +38,17 @@ export async function POST(request: NextRequest) {
   };
   
   // Start the import process in the background
-  parseStudyPlanWithStream(studyPlan, user.id, sendEvent)
+  parseStudyPlanWithStream(studyPlan, user.id, sendEvent, enableDevLogging || false)
     .then(async (result) => {
       // Send final success event
       await sendEvent({
         type: 'complete',
         message: 'Import completed successfully!',
-        data: result.summary,
+        data: {
+          ...result.summary,
+          devLogPath: result.devLogPath,
+          devLogSessionId: result.devLogSessionId,
+        },
       });
       await writer.close();
     })
@@ -56,6 +60,13 @@ export async function POST(request: NextRequest) {
       });
       await writer.close();
     });
+    
+  // Add a timeout to prevent hanging connections
+  setTimeout(async () => {
+    try {
+      await writer.close();
+    } catch {}
+  }, 300000); // 5 minute timeout
   
   // Return the SSE response
   return new Response(stream.readable, {

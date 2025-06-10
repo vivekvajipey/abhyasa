@@ -29,6 +29,8 @@ export default function ImportStudyPlanClient() {
   const [events, setEvents] = useState<EventLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [goalId, setGoalId] = useState<string | null>(null);
+  const [enableDevLogging, setEnableDevLogging] = useState(false);
+  const [devLogInfo, setDevLogInfo] = useState<{path?: string, sessionId?: string} | null>(null);
   const router = useRouter();
 
   const handleImport = useCallback(async () => {
@@ -48,7 +50,7 @@ export default function ImportStudyPlanClient() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ studyPlan }),
+        body: JSON.stringify({ studyPlan, enableDevLogging }),
       });
 
       if (!response.ok) {
@@ -96,6 +98,13 @@ export default function ImportStudyPlanClient() {
               // Handle completion
               if (event.type === 'complete') {
                 setIsImporting(false);
+                // Extract dev log info if available
+                if (event.data?.devLogPath || event.data?.devLogSessionId) {
+                  setDevLogInfo({
+                    path: event.data.devLogPath,
+                    sessionId: event.data.devLogSessionId
+                  });
+                }
               }
             } catch (e) {
               console.error('Failed to parse event:', e);
@@ -155,6 +164,21 @@ export default function ImportStudyPlanClient() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 disabled={isImporting}
               />
+            </div>
+            
+            {/* Dev Mode Toggle */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="dev-logging"
+                checked={enableDevLogging}
+                onChange={(e) => setEnableDevLogging(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isImporting}
+              />
+              <label htmlFor="dev-logging" className="text-sm text-gray-700">
+                Enable developer logging (creates detailed API logs)
+              </label>
             </div>
             
             {/* Example Plans */}
@@ -332,6 +356,23 @@ export default function ImportStudyPlanClient() {
                     </span>
                   </div>
                 </div>
+                
+                {/* Dev Log Info */}
+                {devLogInfo && devLogInfo.sessionId && (
+                  <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+                    <p className="font-semibold text-sm mb-2">Developer Log Created</p>
+                    <p className="text-xs text-gray-600 mb-2">
+                      Detailed API logs have been saved for debugging purposes.
+                    </p>
+                    <Link
+                      href={`/dev-logs/${devLogInfo.sessionId}`}
+                      target="_blank"
+                      className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      View Dev Logs →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
