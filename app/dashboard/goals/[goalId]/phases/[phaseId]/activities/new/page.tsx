@@ -73,6 +73,12 @@ export default async function NewActivityPage({
     const pagesToRead = formData.get('pagesToRead') as string
     const problemsToSolve = formData.get('problemsToSolve') as string
     
+    // Build metadata based on activity type
+    const metadata: any = {}
+    if (targetScore) metadata.target_score = parseInt(targetScore)
+    if (pagesToRead) metadata.pages_to_read = parseInt(pagesToRead)
+    if (problemsToSolve) metadata.problems_to_solve = parseInt(problemsToSolve)
+    
     const { error } = await supabase
       .from('activities')
       .insert({
@@ -82,10 +88,8 @@ export default async function NewActivityPage({
         type,
         resource_id: resourceId || null,
         estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
-        target_score: targetScore ? parseInt(targetScore) : null,
-        pages_to_read: pagesToRead ? parseInt(pagesToRead) : null,
-        problems_to_solve: problemsToSolve ? parseInt(problemsToSolve) : null,
-        order_index: nextOrderIndex
+        order_index: nextOrderIndex,
+        metadata: Object.keys(metadata).length > 0 ? metadata : null
       })
     
     if (!error) {

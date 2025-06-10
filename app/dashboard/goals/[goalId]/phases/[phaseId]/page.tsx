@@ -67,7 +67,7 @@ export default async function PhasePage({
         title,
         author,
         url,
-        notes,
+        description,
         metadata
       )
     `)
