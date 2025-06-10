@@ -257,6 +257,12 @@ export default function PhaseClient({
                       other: '📌'
                     }
                     
+                    const handleActivityClick = (e?: React.MouseEvent) => {
+                      if (e) e.stopPropagation()
+                      // Navigate to the activity page
+                      window.location.href = `/dashboard/activities/${activity.id}`
+                    }
+                    
                     return (
                       <div
                         key={activity.id}
