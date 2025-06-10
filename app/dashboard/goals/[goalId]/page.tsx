@@ -13,7 +13,7 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
     redirect('/')
   }
 
-  // Fetch goal with phases and resources
+  // Fetch goal with phases, activities, and resources
   const { data: goal, error } = await supabase
     .from('goals')
     .select(`
@@ -25,7 +25,21 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
         order_index,
         start_date,
         end_date,
-        status
+        status,
+        activities (
+          id,
+          title,
+          description,
+          type,
+          order_index,
+          estimated_hours,
+          resource_id,
+          resources (
+            id,
+            title,
+            type
+          )
+        )
       ),
       goal_resources (
         id,
@@ -53,7 +67,30 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
   // Sort phases by order
   if (goal.phases) {
     goal.phases.sort((a: any, b: any) => a.order_index - b.order_index)
+    // Sort activities within each phase
+    goal.phases.forEach((phase: any) => {
+      if (phase.activities) {
+        phase.activities.sort((a: any, b: any) => a.order_index - b.order_index)
+      }
+    })
   }
+  
+  // Fetch activity progress for all activities
+  const activityIds = goal.phases?.flatMap((phase: any) => 
+    phase.activities?.map((activity: any) => activity.id) || []
+  ) || []
+  
+  const { data: activityProgress } = await supabase
+    .from('activity_progress')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('activity_id', activityIds)
+  
+  // Create a map of activity progress
+  const progressMap = activityProgress?.reduce((acc: any, progress: any) => {
+    acc[progress.activity_id] = progress
+    return acc
+  }, {}) || {}
 
   // Update phase statuses based on activity progress
   const { updateGoalPhaseStatuses } = await import('@/lib/update-goal-progress')
@@ -71,7 +108,21 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
         order_index,
         start_date,
         end_date,
-        status
+        status,
+        activities (
+          id,
+          title,
+          description,
+          type,
+          order_index,
+          estimated_hours,
+          resource_id,
+          resources (
+            id,
+            title,
+            type
+          )
+        )
       ),
       goal_resources (
         id,
@@ -91,5 +142,17 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
     .eq('user_id', user.id)
     .single()
 
-  return <GoalClient goal={updatedGoal || goal} />
+  // Attach progress to activities
+  const goalWithProgress = updatedGoal || goal
+  if (goalWithProgress.phases) {
+    goalWithProgress.phases.forEach((phase: any) => {
+      if (phase.activities) {
+        phase.activities.forEach((activity: any) => {
+          activity.progress = progressMap[activity.id] || null
+        })
+      }
+    })
+  }
+  
+  return <GoalClient goal={goalWithProgress} />
 }

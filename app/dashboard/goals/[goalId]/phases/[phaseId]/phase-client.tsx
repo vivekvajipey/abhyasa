@@ -237,25 +237,213 @@ export default function PhaseClient({
               </div>
             </div>
 
-            {/* Resource Summary by Type */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Resources Overview</h3>
-              <div className="grid gap-3 md:grid-cols-2">
-                {Object.entries(resourcesByType).map(([type, resources]) => (
-                  <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{resourceTypeIcons[type as ResourceType]}</span>
-                      <div>
-                        <p className="font-medium text-gray-800 capitalize">
-                          {type.replace('_', ' ')}
-                        </p>
-                        <p className="text-sm text-gray-600">{(resources as any[]).length} resource{(resources as any[]).length !== 1 ? 's' : ''}</p>
+            {/* Activities Overview */}
+            {phase.activities && phase.activities.length > 0 ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800">Activities in This Phase</h3>
+                <div className="space-y-3">
+                  {phase.activities.map((activity: any, index: number) => {
+                    const progress = activityProgress[activity.id]
+                    const isCompleted = progress?.status === 'completed'
+                    const isInProgress = progress?.status === 'in_progress'
+                    
+                    const activityTypeIcons: Record<string, string> = {
+                      read: '📖',
+                      watch: '🎥',
+                      practice: '✏️',
+                      exam: '📝',
+                      review: '🔍',
+                      assess: '📊',
+                      other: '📌'
+                    }
+                    
+                    return (
+                      <div
+                        key={activity.id}
+                        className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up"
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <div 
+                          className="cursor-pointer"
+                          onClick={() => handleActivityClick()}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <span className="text-2xl">{activityTypeIcons[activity.type] || '📌'}</span>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-3">
+                                    <h4 className="text-lg font-semibold text-gray-800 hover:text-sage transition-colors">
+                                      {activity.title}
+                                    </h4>
+                                    {isCompleted && (
+                                      <svg className="w-5 h-5 text-sage" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    {isInProgress && (
+                                      <span className="text-sm bg-sage/20 text-sage-dark px-3 py-1 rounded-full">In Progress</span>
+                                    )}
+                                    {!isCompleted && !isInProgress && (
+                                      <span className="text-sm bg-gray-200 text-gray-600 px-3 py-1 rounded-full">Not Started</span>
+                                    )}
+                                  </div>
+                                  {activity.description && (
+                                    <p className="text-gray-600 mt-1">{activity.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 ml-11">
+                                <span className="flex items-center space-x-1">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                  </svg>
+                                  <span className="capitalize">{activity.type}</span>
+                                </span>
+                                
+                                {activity.estimated_hours && (
+                                  <span className="flex items-center space-x-1">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>~{activity.estimated_hours} hours</span>
+                                  </span>
+                                )}
+                                
+                                {activity.resources && (
+                                  <span className="flex items-center space-x-1">
+                                    <span>{resourceTypeIcons[activity.resources.type]}</span>
+                                    <span>{activity.resources.title}</span>
+                                  </span>
+                                )}
+                                
+                                {activity.metadata?.target_score && (
+                                  <span className="flex items-center space-x-1">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                    <span>Target: {activity.metadata.target_score}%</span>
+                                  </span>
+                                )}
+                                
+                                {progress && (
+                                  <>
+                                    {progress.progress_percentage > 0 && (
+                                      <span className="flex items-center space-x-1">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                        <span>{progress.progress_percentage}% complete</span>
+                                      </span>
+                                    )}
+                                    {progress.time_spent_minutes > 0 && (
+                                      <span className="flex items-center space-x-1">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>{Math.round(progress.time_spent_minutes / 60 * 10) / 10}h spent</span>
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                              
+                              {/* Progress Bar for Activity */}
+                              {progress && progress.progress_percentage > 0 && (
+                                <div className="mt-3 ml-11">
+                                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full rounded-full transition-all duration-1000"
+                                      style={{ 
+                                        background: isCompleted 
+                                          ? 'linear-gradient(to right, var(--color-sky), var(--color-sky-dark))'
+                                          : 'linear-gradient(to right, var(--color-sage), var(--color-sage-dark))',
+                                        width: `${progress.progress_percentage}%` 
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleActivityClick(e)
+                              }}
+                              className={`px-4 py-2 rounded-2xl font-medium transition-all ${
+                                isCompleted 
+                                  ? 'bg-gray-100 text-gray-500' 
+                                  : 'bg-sage/10 text-sage-dark hover:bg-sage/20'
+                              }`}
+                            >
+                              {isCompleted ? 'Review' : isInProgress ? 'Continue' : 'Start'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 text-center">
+                <p className="text-gray-600 mb-4">No activities created yet. Start by adding your first activity!</p>
+                <button
+                  onClick={handleCreateActivity}
+                  className="btn-primary inline-block"
+                >
+                  Create First Activity
+                </button>
+              </div>
+            )}
+
+            {/* Resources Overview */}
+            {phaseResources.length > 0 && (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Phase Resources</h3>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {Object.entries(resourcesByType).map(([type, resources]) => (
+                    <div key={type} className="p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <span className="text-2xl">{resourceTypeIcons[type as ResourceType]}</span>
+                        <div>
+                          <p className="font-medium text-gray-800 capitalize">
+                            {type.replace('_', ' ')}
+                          </p>
+                          <p className="text-sm text-gray-600">{(resources as any[]).length} resource{(resources as any[]).length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {(resources as any[]).slice(0, 3).map((pr: any) => (
+                          <div 
+                            key={pr.id} 
+                            className="text-sm text-gray-600 pl-11 truncate cursor-pointer hover:text-sage transition-colors"
+                            onClick={() => {
+                              if (pr.resources.type === 'practice_exam') {
+                                handleStartExam(pr.resources.id)
+                              } else if (pr.resources.type === 'problem_set') {
+                                handleViewProblemSet(pr.resources.id)
+                              } else if (['reading', 'textbook', 'reference'].includes(pr.resources.type)) {
+                                handleReadingProgress(pr.resources.id)
+                              }
+                            }}
+                          >
+                            • {pr.resources.title}
+                          </div>
+                        ))}
+                        {(resources as any[]).length > 3 && (
+                          <div className="text-sm text-gray-500 pl-11">
+                            and {(resources as any[]).length - 3} more...
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

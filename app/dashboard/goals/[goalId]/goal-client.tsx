@@ -155,6 +155,7 @@ export default function GoalClient({ goal }: GoalClientProps) {
       <div className="min-h-[400px]">
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Quick Actions */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
               <div className="grid gap-4 md:grid-cols-2">
@@ -180,10 +181,187 @@ export default function GoalClient({ goal }: GoalClientProps) {
               </div>
             </div>
             
-            {goal.phases && goal.phases.length > 0 && (
+            {/* Phases & Activities Overview */}
+            {goal.phases && goal.phases.length > 0 ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800">Learning Journey</h3>
+                {goal.phases.map((phase: any, phaseIndex: number) => {
+                  const phaseActivities = phase.activities || []
+                  const completedActivities = phaseActivities.filter((a: any) => a.progress?.status === 'completed').length
+                  const phaseProgress = phaseActivities.length > 0 ? (completedActivities / phaseActivities.length) * 100 : 0
+                  
+                  return (
+                    <div key={phase.id} className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up" style={{ animationDelay: `${phaseIndex * 0.1}s` }}>
+                      <Link 
+                        href={`/dashboard/goals/${goal.id}/phases/${phase.id}`}
+                        className="block hover:no-underline"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <span className="text-sm font-medium text-gray-500">Phase {phaseIndex + 1}</span>
+                              <h4 className="text-xl font-semibold text-gray-800 hover:text-sage transition-colors">{phase.name}</h4>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                phase.status === 'completed' ? 'bg-sky/20 text-sky-dark' :
+                                phase.status === 'in_progress' ? 'bg-sage/20 text-sage-dark' :
+                                'bg-gray-200 text-gray-600'
+                              }`}>
+                                {phase.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                            {phase.description && (
+                              <p className="text-gray-600 text-sm mb-2">{phase.description}</p>
+                            )}
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              {phase.start_date && (
+                                <span>📅 {new Date(phase.start_date).toLocaleDateString()} - {phase.end_date ? new Date(phase.end_date).toLocaleDateString() : 'Ongoing'}</span>
+                              )}
+                              <span>📚 {phaseActivities.length} activities</span>
+                              {phaseActivities.length > 0 && (
+                                <span>✅ {completedActivities} completed</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      {/* Phase Progress Bar */}
+                      {phaseActivities.length > 0 && (
+                        <div className="mb-4">
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{ 
+                                background: phase.status === 'completed' 
+                                  ? 'linear-gradient(to right, var(--color-sky), var(--color-sky-dark))'
+                                  : 'linear-gradient(to right, var(--color-sage), var(--color-sage-dark))',
+                                width: `${phaseProgress}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Activities List */}
+                      {phaseActivities.length > 0 && (
+                        <div className="space-y-2">
+                          <h5 className="text-sm font-semibold text-gray-700 mb-2">Activities:</h5>
+                          <div className="grid gap-2">
+                            {phaseActivities.map((activity: any, actIndex: number) => {
+                              const isCompleted = activity.progress?.status === 'completed'
+                              const isInProgress = activity.progress?.status === 'in_progress'
+                              
+                              const activityTypeIcons: Record<string, string> = {
+                                read: '📖',
+                                watch: '🎥',
+                                practice: '✏️',
+                                exam: '📝',
+                                review: '🔍',
+                                assess: '📊',
+                                other: '📌'
+                              }
+                              
+                              return (
+                                <Link
+                                  key={activity.id}
+                                  href={`/dashboard/activities/${activity.id}`}
+                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <span className="text-xl">{activityTypeIcons[activity.type] || '📌'}</span>
+                                    <div>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="font-medium text-gray-800 group-hover:text-sage transition-colors">
+                                          {activity.title}
+                                        </span>
+                                        {isCompleted && (
+                                          <svg className="w-4 h-4 text-sage" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                          </svg>
+                                        )}
+                                        {isInProgress && (
+                                          <span className="text-xs bg-sage/20 text-sage-dark px-2 py-0.5 rounded-full">In Progress</span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center space-x-3 text-xs text-gray-500">
+                                        <span className="capitalize">{activity.type}</span>
+                                        {activity.estimated_hours && (
+                                          <span>~{activity.estimated_hours}h</span>
+                                        )}
+                                        {activity.resources && (
+                                          <span>{activity.resources.title}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {phaseActivities.length === 0 && (
+                        <Link
+                          href={`/dashboard/goals/${goal.id}/phases/${phase.id}/activities/new`}
+                          className="block text-center p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-sage hover:text-sage transition-colors"
+                        >
+                          + Add first activity to this phase
+                        </Link>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 text-center">
+                <p className="text-gray-600 mb-4">No phases created yet. Start by adding your first learning phase!</p>
+                <Link
+                  href={`/dashboard/goals/${goal.id}/phases/new`}
+                  className="btn-primary inline-block"
+                >
+                  Create First Phase
+                </Link>
+              </div>
+            )}
+            
+            {/* Resource Summary */}
+            {goal.goal_resources && goal.goal_resources.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-                <p className="text-gray-600">No recent activity to show</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Resources Overview</h3>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {goal.goal_resources.slice(0, 6).map((goalResource: any) => {
+                    const resource = goalResource.resources
+                    const resourceTypeIcons: Record<string, string> = {
+                      textbook: '📚',
+                      reading: '📖',
+                      practice_exam: '📝',
+                      problem_set: '🧮',
+                      video: '🎥',
+                      reference: '📋',
+                      website: '🌐',
+                      other: '📁'
+                    }
+                    
+                    return (
+                      <div key={goalResource.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+                        <span className="text-2xl">{resourceTypeIcons[resource?.type || 'other']}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-800 truncate">{resource?.title || 'Untitled'}</p>
+                          <p className="text-xs text-gray-500 capitalize">{resource?.type?.replace('_', ' ')}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {goal.goal_resources.length > 6 && (
+                  <p className="text-sm text-gray-500 mt-3 text-center">
+                    and {goal.goal_resources.length - 6} more resources...
+                  </p>
+                )}
               </div>
             )}
           </div>
