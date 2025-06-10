@@ -158,7 +158,7 @@ const functionDeclarations: FunctionDeclaration[] = [
 ];
 
 export interface StudyPlanEvent {
-  type: 'start' | 'thinking' | 'creating' | 'created' | 'error' | 'complete';
+  type: 'start' | 'thinking' | 'creating' | 'created' | 'error' | 'complete' | 'question';
   entity?: 'goal' | 'phase' | 'resource' | 'activity';
   data?: any;
   message?: string;
@@ -166,6 +166,7 @@ export interface StudyPlanEvent {
     current: number;
     total: number;
   };
+  conversationId?: string;
 }
 
 interface StudyPlanContext {
@@ -176,6 +177,8 @@ interface StudyPlanContext {
   createdActivities: any[];
   onEvent?: (event: StudyPlanEvent) => void;
   logger?: GeminiDevLogger;
+  chat?: any;
+  conversationId?: string;
 }
 
 // Function to execute the actual database operations
@@ -358,7 +361,9 @@ export async function parseStudyPlanWithStream(
   studyPlanText: string, 
   userId: string,
   onEvent: (event: StudyPlanEvent) => void,
-  enableDevLogging: boolean = false
+  enableDevLogging: boolean = false,
+  conversationId?: string,
+  previousContext?: StudyPlanContext
 ) {
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-pro-preview-06-05',
@@ -377,7 +382,7 @@ export async function parseStudyPlanWithStream(
     });
   }
   
-  const context: StudyPlanContext = {
+  const context: StudyPlanContext = previousContext || {
     userId,
     createdGoal: null,
     createdPhases: [],
@@ -385,6 +390,7 @@ export async function parseStudyPlanWithStream(
     createdActivities: [],
     onEvent,
     logger,
+    conversationId: conversationId || crypto.randomUUID(),
   };
   
   onEvent({
@@ -418,7 +424,10 @@ ${studyPlanText}`;
   });
   
   try {
-    const chat = model.startChat();
+    // Reuse existing chat or create new one
+    const chat = context.chat || model.startChat();
+    context.chat = chat;
+    
     let iterations = 0;
     const maxIterations = 50; // Safety limit
     
@@ -445,7 +454,34 @@ ${studyPlanText}`;
       
       // Check if there are function calls to process
       const functionCalls = result.response.functionCalls();
+      const responseText = result.response.text();
+      
+      // Check if AI is asking a question
       if (!functionCalls || functionCalls.length === 0) {
+        if (responseText && responseText.length > 0) {
+          // AI is asking for clarification
+          onEvent({
+            type: 'question',
+            message: responseText,
+            conversationId: context.conversationId,
+            data: { context }
+          });
+          
+          // Log the question
+          await logger?.logInfo('AI asked for clarification', {
+            question: responseText,
+            conversationId: context.conversationId
+          });
+          
+          // Return early - waiting for user response
+          return {
+            success: false,
+            needsResponse: true,
+            question: responseText,
+            conversationId: context.conversationId,
+            context,
+          };
+        }
         break;
       }
       
@@ -525,6 +561,7 @@ ${studyPlanText}`;
       summary: finalSummary,
       devLogPath: logger?.getLogPath(),
       devLogSessionId: logger?.getSessionId(),
+      conversationId: context.conversationId,
     };
   } catch (error) {
     // Log error
@@ -533,6 +570,64 @@ ${studyPlanText}`;
     onEvent({
       type: 'error',
       message: `Failed to import study plan: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    });
+    throw error;
+  }
+}
+
+// Function to continue a conversation with user's response
+export async function continueStudyPlanConversation(
+  userResponse: string,
+  conversationId: string,
+  context: StudyPlanContext,
+  enableDevLogging: boolean = false
+) {
+  // Reinitialize logger if needed
+  if (enableDevLogging && !context.logger) {
+    const logger = new GeminiDevLogger(conversationId);
+    await logger.init();
+    context.logger = logger;
+  }
+  
+  const logger = context.logger;
+  
+  // Log user response
+  await logger?.logInfo('User provided clarification', {
+    response: userResponse,
+    conversationId
+  });
+  
+  try {
+    // Send user's response to continue the conversation
+    const requestId = await logger?.logRequest('continuation', userResponse, {
+      conversationId,
+      type: 'user_response'
+    });
+    
+    const startTime = Date.now();
+    const result = await context.chat.sendMessage(userResponse);
+    
+    await logger?.logResponse(
+      requestId || '',
+      result.response.text() || '',
+      result.response.functionCalls(),
+      Date.now() - startTime
+    );
+    
+    // Continue processing with the existing context
+    return parseStudyPlanWithStream(
+      userResponse, // This won't be used as we're continuing
+      context.userId,
+      context.onEvent!,
+      enableDevLogging,
+      conversationId,
+      context
+    );
+  } catch (error) {
+    await logger?.logError(error, 'Conversation continuation failed');
+    context.onEvent?.({
+      type: 'error',
+      message: `Failed to continue conversation: ${error instanceof Error ? error.message : 'Unknown error'}`,
     });
     throw error;
   }

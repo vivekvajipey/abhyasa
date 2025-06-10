@@ -7,7 +7,7 @@ import { examplePlans } from './example-plans';
 import { simpleTestPlan, minimalTestPlan } from './simple-test-plan';
 
 interface StudyPlanEvent {
-  type: 'start' | 'thinking' | 'creating' | 'created' | 'error' | 'complete';
+  type: 'start' | 'thinking' | 'creating' | 'created' | 'error' | 'complete' | 'question';
   entity?: 'goal' | 'phase' | 'resource' | 'activity';
   data?: any;
   message?: string;
@@ -15,6 +15,7 @@ interface StudyPlanEvent {
     current: number;
     total: number;
   };
+  conversationId?: string;
 }
 
 interface EventLog {
@@ -31,6 +32,16 @@ export default function ImportStudyPlanClient() {
   const [goalId, setGoalId] = useState<string | null>(null);
   const [enableDevLogging, setEnableDevLogging] = useState(false);
   const [devLogInfo, setDevLogInfo] = useState<{path?: string, sessionId?: string} | null>(null);
+  const [conversationState, setConversationState] = useState<{
+    isActive: boolean;
+    conversationId?: string;
+    context?: any;
+    currentQuestion?: string;
+    userResponse: string;
+  }>({
+    isActive: false,
+    userResponse: ''
+  });
   const router = useRouter();
 
   const handleImport = useCallback(async () => {
@@ -98,6 +109,7 @@ export default function ImportStudyPlanClient() {
               // Handle completion
               if (event.type === 'complete') {
                 setIsImporting(false);
+                setConversationState({ isActive: false, userResponse: '' });
                 // Extract dev log info if available
                 if (event.data?.devLogPath || event.data?.devLogSessionId) {
                   setDevLogInfo({
@@ -105,6 +117,18 @@ export default function ImportStudyPlanClient() {
                     sessionId: event.data.devLogSessionId
                   });
                 }
+              }
+              
+              // Handle AI questions
+              if (event.type === 'question') {
+                setIsImporting(false);
+                setConversationState({
+                  isActive: true,
+                  conversationId: event.conversationId,
+                  context: event.data?.context,
+                  currentQuestion: event.message,
+                  userResponse: ''
+                });
               }
             } catch (e) {
               console.error('Failed to parse event:', e);
@@ -118,7 +142,8 @@ export default function ImportStudyPlanClient() {
     }
   }, [studyPlan]);
 
-  const getEntityIcon = (entity?: string) => {
+  const getEntityIcon = (entity?: string, type?: string) => {
+    if (type === 'question') return '❓';
     switch (entity) {
       case 'goal': return '🎯';
       case 'phase': return '📅';
@@ -134,7 +159,104 @@ export default function ImportStudyPlanClient() {
       case 'creating': return 'text-blue-600';
       case 'error': return 'text-red-600';
       case 'thinking': return 'text-gray-600';
+      case 'question': return 'text-purple-600';
       default: return 'text-gray-700';
+    }
+  };
+  
+  const handleContinueConversation = async () => {
+    if (!conversationState.userResponse.trim() || !conversationState.conversationId) {
+      return;
+    }
+    
+    setIsImporting(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/study-plan/continue-conversation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userResponse: conversationState.userResponse,
+          conversationId: conversationState.conversationId,
+          context: conversationState.context,
+          enableDevLogging
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to continue conversation');
+      }
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) {
+        throw new Error('No response body');
+      }
+      
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6));
+              const logEntry: EventLog = {
+                id: Math.random().toString(36).substr(2, 9),
+                event,
+                timestamp: new Date(),
+              };
+              
+              setEvents(prev => [...prev, logEntry]);
+              
+              // Handle events same as before
+              if (event.type === 'created' && event.entity === 'goal') {
+                setGoalId(event.data.id);
+              }
+              
+              if (event.type === 'error') {
+                setError(event.message || 'Continuation failed');
+                setIsImporting(false);
+              }
+              
+              if (event.type === 'complete') {
+                setIsImporting(false);
+                setConversationState({ isActive: false, userResponse: '' });
+                if (event.data?.devLogPath || event.data?.devLogSessionId) {
+                  setDevLogInfo({
+                    path: event.data.devLogPath,
+                    sessionId: event.data.devLogSessionId
+                  });
+                }
+              }
+              
+              if (event.type === 'question') {
+                setIsImporting(false);
+                setConversationState({
+                  isActive: true,
+                  conversationId: event.conversationId,
+                  context: event.data?.context,
+                  currentQuestion: event.message,
+                  userResponse: ''
+                });
+              }
+            } catch (e) {
+              console.error('Failed to parse event:', e);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to continue conversation');
+      setIsImporting(false);
     }
   };
 
@@ -227,8 +349,31 @@ export default function ImportStudyPlanClient() {
               </div>
             )}
 
+            {/* AI Question Response */}
+            {conversationState.isActive && conversationState.currentQuestion && (
+              <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h3 className="text-sm font-medium text-purple-900 mb-2">AI needs clarification:</h3>
+                <p className="text-sm text-purple-700 mb-3">{conversationState.currentQuestion}</p>
+                <textarea
+                  value={conversationState.userResponse}
+                  onChange={(e) => setConversationState(prev => ({ ...prev, userResponse: e.target.value }))}
+                  placeholder="Type your response here..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-purple-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  disabled={isImporting}
+                />
+                <button
+                  onClick={handleContinueConversation}
+                  disabled={!conversationState.userResponse.trim() || isImporting}
+                  className="mt-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send Response
+                </button>
+              </div>
+            )}
+            
             <div className="flex gap-4">
-              {!isImporting && !goalId && (
+              {!isImporting && !goalId && !conversationState.isActive && (
                 <button
                   onClick={handleImport}
                   disabled={!studyPlan.trim()}
@@ -295,7 +440,7 @@ export default function ImportStudyPlanClient() {
                   >
                     <div className="flex items-start gap-3">
                       <span className="text-2xl flex-shrink-0">
-                        {getEntityIcon(log.event.entity)}
+                        {getEntityIcon(log.event.entity, log.event.type)}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium ${getEventColor(log.event.type)}`}>
