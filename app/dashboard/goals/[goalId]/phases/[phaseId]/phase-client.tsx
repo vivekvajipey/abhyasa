@@ -123,12 +123,12 @@ export default function PhaseClient({
         </div>
         
         <div className="flex space-x-3">
-          <button
-            onClick={() => {/* TODO: Edit phase */}}
+          <Link
+            href={`/dashboard/goals/${goalId}/phases/${phase.id}/edit`}
             className="btn-secondary text-sm"
           >
             Edit Phase
-          </button>
+          </Link>
           <button
             onClick={() => setShowDeleteConfirm(true)}
             className="px-4 py-2 text-sm text-coral-dark hover:bg-coral/10 rounded-2xl transition-colors"
