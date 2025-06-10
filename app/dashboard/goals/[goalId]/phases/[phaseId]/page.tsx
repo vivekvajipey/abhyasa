@@ -29,17 +29,15 @@ export default async function PhasePage({
         description,
         estimated_hours,
         order_index,
-        target_score,
-        pages_to_read,
-        problems_to_solve,
         prerequisite_activity_id,
+        metadata,
         resources (
           id,
           type,
           title,
           author,
           url,
-          notes,
+          description,
           metadata
         )
       ),
@@ -54,6 +52,7 @@ export default async function PhasePage({
     .single()
 
   if (error || !phase) {
+    console.error('Error fetching phase:', error)
     redirect(`/dashboard/goals/${goalId}`)
   }
 
@@ -73,8 +72,7 @@ export default async function PhasePage({
       )
     `)
     .eq('goal_id', goalId)
-    .eq('phase_id', phaseId)
-    .order('priority')
+    // phase_id doesn't exist in goal_resources
 
   // Fetch activity progress for the user
   const activityIds = phase.activities?.map((a: any) => a.id) || []

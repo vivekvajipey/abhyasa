@@ -164,7 +164,7 @@ export default function GoalClient({ goal }: GoalClientProps) {
               </div>
             </div>
             
-            {goal.goal_phases && goal.goal_phases.length > 0 && (
+            {goal.phases && goal.phases.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
                 <p className="text-gray-600">No recent activity to show</p>
@@ -175,8 +175,8 @@ export default function GoalClient({ goal }: GoalClientProps) {
 
         {activeTab === 'phases' && (
           <div className="space-y-4">
-            {goal.goal_phases && goal.goal_phases.length > 0 ? (
-              goal.goal_phases.map((phase: any, index: number) => (
+            {goal.phases && goal.phases.length > 0 ? (
+              goal.phases.map((phase: any, index: number) => (
                 <Link
                   key={phase.id}
                   href={`/dashboard/goals/${goal.id}/phases/${phase.id}`}
@@ -195,11 +195,11 @@ export default function GoalClient({ goal }: GoalClientProps) {
                       )}
                       
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        {phase.target_start_date && (
-                          <span>Start: {new Date(phase.target_start_date).toLocaleDateString()}</span>
+                        {phase.start_date && (
+                          <span>Start: {new Date(phase.start_date).toLocaleDateString()}</span>
                         )}
-                        {phase.target_end_date && (
-                          <span>End: {new Date(phase.target_end_date).toLocaleDateString()}</span>
+                        {phase.end_date && (
+                          <span>End: {new Date(phase.end_date).toLocaleDateString()}</span>
                         )}
                       </div>
                     </div>

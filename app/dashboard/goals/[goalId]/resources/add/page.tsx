@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ResourceType, Priority } from '@/types/goals'
+import { ResourceType } from '@/types/goals'
 
 interface PageProps {
   params: Promise<{ goalId: string }>
@@ -73,14 +73,12 @@ export default function AddResourcePage({ params }: PageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     type: 'textbook' as ResourceType,
     title: '',
     author: '',
     url: '',
     notes: '',
-    phase_id: '',
-    priority: 'medium' as Priority,
     // Metadata fields
     total_pages: '',
     total_questions: '',
@@ -103,7 +101,7 @@ export default function AddResourcePage({ params }: PageProps) {
   const fetchPhases = async (gId: string) => {
     const supabase = createClient()
     const { data } = await supabase
-      .from('goal_phases')
+      .from('phases')
       .select('id, name, order_index')
       .eq('goal_id', gId)
       .order('order_index')
@@ -152,7 +150,7 @@ export default function AddResourcePage({ params }: PageProps) {
           title: formData.title,
           author: formData.author || null,
           url: formData.url || null,
-          notes: formData.notes || null,
+          description: formData.notes || null,
           metadata: Object.keys(metadata).length > 0 ? metadata : null
         })
         .select()
@@ -166,9 +164,7 @@ export default function AddResourcePage({ params }: PageProps) {
         .insert({
           goal_id: goalId,
           resource_id: resource.id,
-          phase_id: formData.phase_id || null,
-          priority: formData.priority,
-          notes: null
+          // phase_id and priority don't exist in goal_resources table
         })
 
       if (linkError) throw linkError

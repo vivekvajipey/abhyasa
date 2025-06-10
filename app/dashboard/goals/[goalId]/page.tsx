@@ -30,15 +30,13 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
       goal_resources (
         id,
         resource_id,
-        priority,
-        notes,
         resources (
           id,
           type,
           title,
           author,
           url,
-          notes,
+          description,
           metadata
         )
       )
@@ -48,6 +46,7 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
     .single()
 
   if (error || !goal) {
+    console.error('Error fetching goal:', error)
     redirect('/dashboard')
   }
 
