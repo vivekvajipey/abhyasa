@@ -528,12 +528,6 @@ export default function PhaseClient({
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-600 mb-4">No activities created yet</p>
-                <button
-                  onClick={handleCreateActivity}
-                  className="btn-primary inline-block"
-                >
-                  Create First Activity
-                </button>
               </div>
             )}
           </div>
