@@ -29,7 +29,7 @@ export default function EditGoalWithAI({ goal }: { goal: any }) {
   const [events, setEvents] = useState<EventLog[]>([])
   const [error, setError] = useState<string | null>(null)
   const [enableDevLogging, setEnableDevLogging] = useState(false)
-  const [devLogInfo, setDevLogInfo] = useState<{path?: string, sessionId?: string} | null>(null)
+  const [devLogInfo, setDevLogInfo] = useState<{ sessionId?: string } | null>(null)
   const [conversationState, setConversationState] = useState<{
     isActive: boolean;
     conversationId?: string;
@@ -107,9 +107,8 @@ export default function EditGoalWithAI({ goal }: { goal: any }) {
                 setIsEditing(false)
                 setConversationState({ isActive: false, userResponse: '' })
                 // Extract dev log info if available
-                if (event.data?.devLogPath || event.data?.devLogSessionId) {
+                if (event.data?.devLogSessionId) {
                   setDevLogInfo({
-                    path: event.data.devLogPath,
                     sessionId: event.data.devLogSessionId
                   })
                 }

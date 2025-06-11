@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
         message: 'Edit completed successfully!',
         data: {
           ...result.summary,
-          devLogPath: result.devLogPath,
           devLogSessionId: result.devLogSessionId,
         },
       });

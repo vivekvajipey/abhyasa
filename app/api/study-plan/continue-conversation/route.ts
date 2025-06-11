@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
           message: 'Import completed successfully!',
           data: {
             ...result.summary,
-            devLogPath: result.devLogPath,
             devLogSessionId: result.devLogSessionId,
           },
         });

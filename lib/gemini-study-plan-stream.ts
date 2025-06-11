@@ -683,8 +683,7 @@ export async function parseStudyPlanWithStream(
   // Initialize logger if enabled
   let logger: GeminiDevLogger | undefined;
   if (enableDevLogging) {
-    logger = new GeminiDevLogger();
-    await logger.init();
+    logger = new GeminiDevLogger(userId);
     await logger.logInfo('Starting study plan import', {
       userId,
       studyPlanLength: studyPlanText.length,
@@ -873,7 +872,6 @@ ${studyPlanText}`;
     return {
       success: true,
       summary: finalSummary,
-      devLogPath: logger?.getLogPath(),
       devLogSessionId: logger?.getSessionId(),
       conversationId: context.conversationId,
     };
@@ -905,8 +903,7 @@ export async function editGoalWithAI(
   // Initialize logger if enabled
   let logger: GeminiDevLogger | undefined;
   if (enableDevLogging) {
-    logger = new GeminiDevLogger();
-    await logger.init();
+    logger = new GeminiDevLogger(userId);
     await logger.logInfo('Starting goal edit', {
       goalId,
       userId,
@@ -1090,7 +1087,6 @@ Important guidelines:
     return {
       success: true,
       summary: finalSummary,
-      devLogPath: logger?.getLogPath(),
       devLogSessionId: logger?.getSessionId(),
       conversationId: context.conversationId,
     };
@@ -1114,8 +1110,7 @@ export async function continueStudyPlanConversation(
 ) {
   // Reinitialize logger if needed
   if (enableDevLogging && !context.logger) {
-    const logger = new GeminiDevLogger(conversationId);
-    await logger.init();
+    const logger = new GeminiDevLogger(context.userId, conversationId);
     context.logger = logger;
   }
   

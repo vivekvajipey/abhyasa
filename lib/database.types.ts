@@ -535,6 +535,53 @@ export interface Database {
           created_at?: string
         }
       }
+      developer_logs: {
+        Row: {
+          id: string
+          session_id: string
+          user_id: string
+          timestamp: string
+          type: 'request' | 'response' | 'tool_call' | 'error' | 'info'
+          model: string | null
+          prompt: string | null
+          response: string | null
+          tool_calls: Json | null
+          error: Json | null
+          metadata: Json
+          duration: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          user_id: string
+          timestamp?: string
+          type: 'request' | 'response' | 'tool_call' | 'error' | 'info'
+          model?: string | null
+          prompt?: string | null
+          response?: string | null
+          tool_calls?: Json | null
+          error?: Json | null
+          metadata?: Json
+          duration?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          user_id?: string
+          timestamp?: string
+          type?: 'request' | 'response' | 'tool_call' | 'error' | 'info'
+          model?: string | null
+          prompt?: string | null
+          response?: string | null
+          tool_calls?: Json | null
+          error?: Json | null
+          metadata?: Json
+          duration?: number | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

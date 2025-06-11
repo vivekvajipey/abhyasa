@@ -1,6 +1,6 @@
-import fs from 'fs/promises'
-import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
+import { createClient } from '@supabase/supabase-js'
+import { Database } from './database.types'
 
 export interface GeminiLogEntry {
   id: string
@@ -17,137 +17,154 @@ export interface GeminiLogEntry {
 
 export class GeminiDevLogger {
   private sessionId: string
-  private logEntries: GeminiLogEntry[] = []
+  private userId: string
   private startTime: number
-  private logDir: string
+  private supabase: ReturnType<typeof createClient<Database>>
   
-  constructor(sessionId?: string) {
+  constructor(userId: string, sessionId?: string) {
+    this.userId = userId
     this.sessionId = sessionId || uuidv4()
     this.startTime = Date.now()
-    this.logDir = path.join(process.cwd(), 'logs', 'gemini')
-  }
-  
-  async init() {
-    // Ensure log directory exists
-    await fs.mkdir(this.logDir, { recursive: true })
+    
+    // Initialize Supabase client - using service role for server-side operations
+    this.supabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
   }
   
   async logRequest(model: string, prompt: string, metadata?: Record<string, any>) {
-    const entry: GeminiLogEntry = {
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      type: 'request',
-      model,
-      prompt,
-      metadata
+    const { data, error } = await this.supabase
+      .from('developer_logs')
+      .insert({
+        session_id: this.sessionId,
+        user_id: this.userId,
+        type: 'request',
+        model,
+        prompt,
+        metadata: metadata || {}
+      })
+      .select('id')
+      .single()
+    
+    if (error) {
+      console.error('Failed to log request:', error)
+      return null
     }
     
-    this.logEntries.push(entry)
-    await this.saveToFile()
-    
-    return entry.id
+    return data.id
   }
   
   async logResponse(requestId: string, response: string, toolCalls?: any[], duration?: number) {
-    const entry: GeminiLogEntry = {
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      type: 'response',
-      response,
-      toolCalls,
-      duration,
-      metadata: { requestId }
-    }
+    const { error } = await this.supabase
+      .from('developer_logs')
+      .insert({
+        session_id: this.sessionId,
+        user_id: this.userId,
+        type: 'response',
+        response,
+        tool_calls: toolCalls || null,
+        duration,
+        metadata: { requestId }
+      })
     
-    this.logEntries.push(entry)
-    await this.saveToFile()
+    if (error) {
+      console.error('Failed to log response:', error)
+    }
   }
   
   async logToolCall(toolName: string, args: any, result: any, duration?: number) {
-    const entry: GeminiLogEntry = {
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      type: 'tool_call',
-      metadata: {
-        toolName,
-        args,
-        result,
+    const { error } = await this.supabase
+      .from('developer_logs')
+      .insert({
+        session_id: this.sessionId,
+        user_id: this.userId,
+        type: 'tool_call',
+        metadata: {
+          toolName,
+          args,
+          result
+        },
         duration
-      }
-    }
+      })
     
-    this.logEntries.push(entry)
-    await this.saveToFile()
+    if (error) {
+      console.error('Failed to log tool call:', error)
+    }
   }
   
   async logError(error: any, context?: string) {
-    const entry: GeminiLogEntry = {
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      type: 'error',
-      error: {
-        message: error.message || String(error),
-        stack: error.stack,
-        context
-      }
-    }
+    const { error: dbError } = await this.supabase
+      .from('developer_logs')
+      .insert({
+        session_id: this.sessionId,
+        user_id: this.userId,
+        type: 'error',
+        error: {
+          message: error.message || String(error),
+          stack: error.stack,
+          context
+        }
+      })
     
-    this.logEntries.push(entry)
-    await this.saveToFile()
+    if (dbError) {
+      console.error('Failed to log error:', dbError)
+    }
   }
   
   async logInfo(message: string, metadata?: Record<string, any>) {
-    const entry: GeminiLogEntry = {
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      type: 'info',
-      metadata: {
-        message,
-        ...metadata
-      }
+    const { error } = await this.supabase
+      .from('developer_logs')
+      .insert({
+        session_id: this.sessionId,
+        user_id: this.userId,
+        type: 'info',
+        metadata: {
+          message,
+          ...metadata
+        }
+      })
+    
+    if (error) {
+      console.error('Failed to log info:', error)
     }
-    
-    this.logEntries.push(entry)
-    await this.saveToFile()
-  }
-  
-  private async saveToFile() {
-    const filename = `gemini-session-${this.sessionId}.json`
-    const filepath = path.join(this.logDir, filename)
-    
-    const logData = {
-      sessionId: this.sessionId,
-      startTime: new Date(this.startTime).toISOString(),
-      duration: Date.now() - this.startTime,
-      entryCount: this.logEntries.length,
-      entries: this.logEntries
-    }
-    
-    await fs.writeFile(filepath, JSON.stringify(logData, null, 2))
   }
   
   getSessionId() {
     return this.sessionId
   }
   
-  getLogPath() {
-    return path.join(this.logDir, `gemini-session-${this.sessionId}.json`)
-  }
-  
-  getSummary() {
-    const requestCount = this.logEntries.filter(e => e.type === 'request').length
-    const responseCount = this.logEntries.filter(e => e.type === 'response').length
-    const toolCallCount = this.logEntries.filter(e => e.type === 'tool_call').length
-    const errorCount = this.logEntries.filter(e => e.type === 'error').length
+  async getSummary() {
+    const { data, error } = await this.supabase
+      .from('developer_logs')
+      .select('type')
+      .eq('session_id', this.sessionId)
+    
+    if (error || !data) {
+      return {
+        sessionId: this.sessionId,
+        duration: Date.now() - this.startTime,
+        requests: 0,
+        responses: 0,
+        toolCalls: 0,
+        errors: 0,
+        totalEntries: 0
+      }
+    }
+    
+    const counts = data.reduce((acc, entry) => {
+      acc[entry.type] = (acc[entry.type] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
     
     return {
       sessionId: this.sessionId,
       duration: Date.now() - this.startTime,
-      requests: requestCount,
-      responses: responseCount,
-      toolCalls: toolCallCount,
-      errors: errorCount,
-      totalEntries: this.logEntries.length
+      requests: counts.request || 0,
+      responses: counts.response || 0,
+      toolCalls: counts.tool_call || 0,
+      errors: counts.error || 0,
+      totalEntries: data.length
     }
   }
 }

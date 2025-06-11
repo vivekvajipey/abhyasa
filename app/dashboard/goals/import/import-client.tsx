@@ -31,7 +31,7 @@ export default function ImportStudyPlanClient() {
   const [error, setError] = useState<string | null>(null);
   const [goalId, setGoalId] = useState<string | null>(null);
   const [enableDevLogging, setEnableDevLogging] = useState(false);
-  const [devLogInfo, setDevLogInfo] = useState<{path?: string, sessionId?: string} | null>(null);
+  const [devLogInfo, setDevLogInfo] = useState<{ sessionId?: string } | null>(null);
   const [conversationState, setConversationState] = useState<{
     isActive: boolean;
     conversationId?: string;
@@ -111,9 +111,8 @@ export default function ImportStudyPlanClient() {
                 setIsImporting(false);
                 setConversationState({ isActive: false, userResponse: '' });
                 // Extract dev log info if available
-                if (event.data?.devLogPath || event.data?.devLogSessionId) {
+                if (event.data?.devLogSessionId) {
                   setDevLogInfo({
-                    path: event.data.devLogPath,
                     sessionId: event.data.devLogSessionId
                   });
                 }
@@ -230,9 +229,8 @@ export default function ImportStudyPlanClient() {
               if (event.type === 'complete') {
                 setIsImporting(false);
                 setConversationState({ isActive: false, userResponse: '' });
-                if (event.data?.devLogPath || event.data?.devLogSessionId) {
+                if (event.data?.devLogSessionId) {
                   setDevLogInfo({
-                    path: event.data.devLogPath,
                     sessionId: event.data.devLogSessionId
                   });
                 }

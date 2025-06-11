@@ -451,6 +451,180 @@ CREATE POLICY "Users can manage own exam topic performance" ON public.exam_topic
 CREATE POLICY "Users can manage own study sessions" ON public.study_sessions
   FOR ALL USING (auth.uid() = user_id);
 
+-- =====================================================
+-- DEVELOPER LOGS (for debugging AI interactions)
+-- =====================================================
+
+-- Developer logs for tracking AI API interactions
+CREATE TABLE public.developer_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  type TEXT NOT NULL CHECK (type IN ('request', 'response', 'tool_call', 'error', 'info')),
+  model TEXT,
+  prompt TEXT,
+  response TEXT,
+  tool_calls JSONB,
+  error JSONB,
+  metadata JSONB DEFAULT '{}',
+  duration INTEGER, -- in milliseconds
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for developer logs
+CREATE INDEX idx_developer_logs_session_id ON public.developer_logs(session_id);
+CREATE INDEX idx_developer_logs_user_id ON public.developer_logs(user_id);
+CREATE INDEX idx_developer_logs_timestamp ON public.developer_logs(timestamp);
+CREATE INDEX idx_developer_logs_type ON public.developer_logs(type);
+
+-- Enable RLS on developer logs
+ALTER TABLE public.developer_logs ENABLE ROW LEVEL SECURITY;
+
+-- Developer log policies (only accessible by the user who created them)
+CREATE POLICY "Users can manage own developer logs" ON public.developer_logs
+  FOR ALL USING (auth.uid() = user_id);
+
+-- =====================================================
+-- RESOURCE AGGREGATION VIEWS
+-- =====================================================
+-- These views provide automatic aggregation of resources from activities
+-- up to their parent phases and goals
+
+-- Phase resources view - aggregates resources from activities
+CREATE VIEW public.phase_resources_view AS
+SELECT DISTINCT
+    p.id as phase_id,
+    p.goal_id,
+    r.id as resource_id,
+    r.type,
+    r.title,
+    r.author,
+    r.url,
+    r.description,
+    r.metadata,
+    r.created_at,
+    r.updated_at,
+    'activity' as association_type,
+    a.id as activity_id,
+    a.title as activity_title
+FROM public.phases p
+INNER JOIN public.activities a ON a.phase_id = p.id
+INNER JOIN public.resources r ON r.id = a.resource_id
+WHERE a.resource_id IS NOT NULL;
+
+-- Goal resources view - aggregates all resources (direct + from activities)
+CREATE VIEW public.goal_resources_view AS
+-- Direct goal resources
+SELECT DISTINCT
+    g.id as goal_id,
+    r.id as resource_id,
+    r.type,
+    r.title,
+    r.author,
+    r.url,
+    r.description,
+    r.metadata,
+    r.created_at,
+    r.updated_at,
+    'direct' as association_type,
+    NULL::uuid as phase_id,
+    NULL::text as phase_name,
+    NULL::uuid as activity_id,
+    NULL::text as activity_title
+FROM public.goals g
+INNER JOIN public.goal_resources gr ON gr.goal_id = g.id
+INNER JOIN public.resources r ON r.id = gr.resource_id
+
+UNION
+
+-- Resources from activities in phases
+SELECT DISTINCT
+    g.id as goal_id,
+    r.id as resource_id,
+    r.type,
+    r.title,
+    r.author,
+    r.url,
+    r.description,
+    r.metadata,
+    r.created_at,
+    r.updated_at,
+    'activity' as association_type,
+    p.id as phase_id,
+    p.name as phase_name,
+    a.id as activity_id,
+    a.title as activity_title
+FROM public.goals g
+INNER JOIN public.phases p ON p.goal_id = g.id
+INNER JOIN public.activities a ON a.phase_id = p.id
+INNER JOIN public.resources r ON r.id = a.resource_id
+WHERE a.resource_id IS NOT NULL;
+
+-- Function to get all unique resources for a goal
+CREATE OR REPLACE FUNCTION get_goal_resources(p_goal_id UUID)
+RETURNS TABLE (
+    resource_id UUID,
+    type TEXT,
+    title TEXT,
+    author TEXT,
+    url TEXT,
+    description TEXT,
+    metadata JSONB,
+    association_types TEXT[]
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        grv.resource_id,
+        grv.type,
+        grv.title,
+        grv.author,
+        grv.url,
+        grv.description,
+        grv.metadata,
+        array_agg(DISTINCT grv.association_type) as association_types
+    FROM public.goal_resources_view grv
+    WHERE grv.goal_id = p_goal_id
+    GROUP BY 
+        grv.resource_id,
+        grv.type,
+        grv.title,
+        grv.author,
+        grv.url,
+        grv.description,
+        grv.metadata;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Function to count resources for a goal
+CREATE OR REPLACE FUNCTION count_goal_resources(p_goal_id UUID)
+RETURNS BIGINT AS $$
+BEGIN
+    RETURN (
+        SELECT COUNT(DISTINCT resource_id)
+        FROM public.goal_resources_view
+        WHERE goal_id = p_goal_id
+    );
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Function to count resources for a phase  
+CREATE OR REPLACE FUNCTION count_phase_resources(p_phase_id UUID)
+RETURNS BIGINT AS $$
+BEGIN
+    RETURN (
+        SELECT COUNT(DISTINCT resource_id)
+        FROM public.phase_resources_view
+        WHERE phase_id = p_phase_id
+    );
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Grant execute permissions on functions to authenticated users
+GRANT EXECUTE ON FUNCTION get_goal_resources(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION count_goal_resources(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION count_phase_resources(UUID) TO authenticated;
 
 -- =====================================================
 -- HELPER FUNCTIONS
