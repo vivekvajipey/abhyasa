@@ -10,6 +10,7 @@ import { deletePhase } from '@/app/actions/delete-actions'
 interface PhaseClientProps {
   phase: any
   phaseResources: any[]
+  resourceCount: number
   activityProgress: any
   goalId: string
   userId: string
@@ -17,7 +18,8 @@ interface PhaseClientProps {
 
 export default function PhaseClient({ 
   phase, 
-  phaseResources, 
+  phaseResources,
+  resourceCount, 
   activityProgress, 
   goalId,
   userId
@@ -35,11 +37,11 @@ export default function PhaseClient({
     ? (completedActivities / totalActivities) * 100 
     : 0
 
-  // Group resources by type
-  const resourcesByType = phaseResources.reduce((acc: any, pr: any) => {
-    const type = pr.resources?.type || 'other'
+  // Group resources by type (phaseResources is now flat array from RPC function)
+  const resourcesByType = phaseResources.reduce((acc: any, resource: any) => {
+    const type = resource.type || 'other'
     if (!acc[type]) acc[type] = []
-    acc[type].push(pr)
+    acc[type].push(resource)
     return acc
   }, {})
 
@@ -191,7 +193,7 @@ export default function PhaseClient({
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Resources ({phaseResources.length})
+            Resources ({resourceCount})
           </button>
         </nav>
       </div>
@@ -542,21 +544,19 @@ export default function PhaseClient({
                   <span className="capitalize">{type.replace('_', ' ')}</span>
                 </h4>
                 
-                {(resources as any[]).map((pr: any, index: number) => {
-                  const resource = pr.resources
-                  
+                {(resources as any[]).map((resource: any, index: number) => {
                   return (
                     <div
-                      key={pr.id}
+                      key={resource.resource_id}
                       className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up hover:shadow-medium transition-all cursor-pointer"
                       style={{ animationDelay: `${index * 0.1}s` }}
                       onClick={() => {
                         if (resource.type === 'practice_exam') {
-                          handleStartExam(resource.id)
+                          handleStartExam(resource.resource_id)
                         } else if (resource.type === 'problem_set') {
-                          handleViewProblemSet(resource.id)
+                          handleViewProblemSet(resource.resource_id)
                         } else if (resource.type === 'reading' || resource.type === 'textbook' || resource.type === 'reference') {
-                          handleReadingProgress(resource.id)
+                          handleReadingProgress(resource.resource_id)
                         }
                       }}
                     >
@@ -586,6 +586,12 @@ export default function PhaseClient({
                           
                           {resource.description && (
                             <p className="text-gray-600 mt-2 text-sm">{resource.description}</p>
+                          )}
+                          
+                          {resource.activity_count && resource.activity_count > 0 && (
+                            <p className="text-xs text-sage-dark mt-2 bg-sage/10 inline-block px-2 py-1 rounded">
+                              Used in {resource.activity_count} {resource.activity_count === 1 ? 'activity' : 'activities'}
+                            </p>
                           )}
                         </div>
                       </div>

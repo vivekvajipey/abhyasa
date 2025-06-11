@@ -146,7 +146,7 @@ export default function GoalClient({ goal }: GoalClientProps) {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Resources ({goal.goal_resources?.length || 0})
+            Resources ({goal.totalResourceCount || 0})
           </button>
         </nav>
       </div>
@@ -423,97 +423,169 @@ export default function GoalClient({ goal }: GoalClientProps) {
         )}
 
         {activeTab === 'resources' && (
-          <div className="space-y-4">
-            {goal.goal_resources && goal.goal_resources.length > 0 ? (
-              goal.goal_resources.map((goalResource: any, index: number) => {
-                const resource = goalResource.resources
-                const resourceTypeIcons: Record<string, string> = {
-                  textbook: '📚',
-                  reading: '📖',
-                  practice_exam: '📝',
-                  problem_set: '🧮',
-                  video: '🎥',
-                  reference: '📋',
-                  website: '🌐',
-                  other: '📁'
-                }
-                
-                return (
-                  <div
-                    key={goalResource.id}
-                    className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up hover:shadow-medium transition-all cursor-pointer"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex space-x-4">
-                        <div className="text-3xl">
-                          {resourceTypeIcons[resource?.type || 'other']}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                            {resource?.title || 'Untitled Resource'}
-                          </h4>
-                          
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                            <span className="capitalize bg-gray-100 px-2 py-1 rounded">
-                              {resource?.type?.replace('_', ' ') || 'unknown'}
-                            </span>
-                            {resource?.author && (
-                              <span>by {resource.author}</span>
-                            )}
-                            {resource?.metadata?.total_pages && (
-                              <span>{resource.metadata.total_pages} pages</span>
-                            )}
-                            {resource?.metadata?.total_questions && (
-                              <span>{resource.metadata.total_questions} questions</span>
-                            )}
-                            {resource?.metadata?.time_limit_minutes && (
-                              <span>{resource.metadata.time_limit_minutes} min time limit</span>
-                            )}
+          <div className="space-y-6">
+            {goal.aggregatedResources && goal.aggregatedResources.length > 0 ? (
+              <>
+                {/* Group resources by association type */}
+                {(() => {
+                  const directResources = goal.aggregatedResources.filter((r: any) => 
+                    r.association_types?.includes('direct')
+                  )
+                  const activityResources = goal.aggregatedResources.filter((r: any) => 
+                    r.association_types?.includes('activity') && 
+                    !r.association_types?.includes('direct')
+                  )
+                  
+                  const resourceTypeIcons: Record<string, string> = {
+                    textbook: '📚',
+                    reading: '📖',
+                    practice_exam: '📝',
+                    problem_set: '🧮',
+                    video: '🎥',
+                    reference: '📋',
+                    website: '🌐',
+                    other: '📁'
+                  }
+                  
+                  return (
+                    <>
+                      {directResources.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Direct Resources</h3>
+                          <div className="space-y-4">
+                            {directResources.map((resource: any, index: number) => (
+                              <div
+                                key={resource.resource_id}
+                                className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up hover:shadow-medium transition-all cursor-pointer"
+                                style={{ animationDelay: `${index * 0.1}s` }}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex space-x-4">
+                                    <div className="text-3xl">
+                                      {resourceTypeIcons[resource.type || 'other']}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                                        {resource.title || 'Untitled Resource'}
+                                      </h4>
+                                      
+                                      <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                                        <span className="capitalize bg-gray-100 px-2 py-1 rounded">
+                                          {resource.type?.replace('_', ' ') || 'unknown'}
+                                        </span>
+                                        {resource.author && (
+                                          <span>by {resource.author}</span>
+                                        )}
+                                        {resource.metadata?.total_pages && (
+                                          <span>{resource.metadata.total_pages} pages</span>
+                                        )}
+                                        {resource.metadata?.total_questions && (
+                                          <span>{resource.metadata.total_questions} questions</span>
+                                        )}
+                                      </div>
+                                      
+                                      {resource.description && (
+                                        <p className="text-gray-600 mt-3 text-sm">
+                                          {resource.description}
+                                        </p>
+                                      )}
+                                      
+                                      {resource.url && (
+                                        <a 
+                                          href={resource.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center space-x-1 text-sm text-sky-600 hover:text-sky-700 mt-2"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <span>View Resource</span>
+                                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                          </svg>
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          
-                          {(goalResource.notes || resource?.notes) && (
-                            <p className="text-gray-600 mt-3 text-sm">
-                              {goalResource.notes || resource.notes}
-                            </p>
-                          )}
-                          
-                          {resource?.url && (
-                            <a 
-                              href={resource.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-1 text-sm text-sky-600 hover:text-sky-700 mt-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <span>View Resource</span>
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                            </a>
-                          )}
                         </div>
-                      </div>
+                      )}
                       
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                        goalResource.priority === 'high' ? 'bg-coral/20 text-coral-dark' :
-                        goalResource.priority === 'medium' ? 'bg-sage/20 text-sage-dark' :
-                        'bg-gray-200 text-gray-600'
-                      }`}>
-                        {goalResource.priority} priority
-                      </span>
-                    </div>
-                  </div>
-                )
-              })
+                      {activityResources.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Resources from Activities</h3>
+                          <div className="space-y-4">
+                            {activityResources.map((resource: any, index: number) => (
+                              <div
+                                key={resource.resource_id}
+                                className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-slide-up hover:shadow-medium transition-all cursor-pointer"
+                                style={{ animationDelay: `${(directResources.length + index) * 0.1}s` }}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex space-x-4">
+                                    <div className="text-3xl">
+                                      {resourceTypeIcons[resource.type || 'other']}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                                        {resource.title || 'Untitled Resource'}
+                                      </h4>
+                                      
+                                      <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                                        <span className="capitalize bg-gray-100 px-2 py-1 rounded">
+                                          {resource.type?.replace('_', ' ') || 'unknown'}
+                                        </span>
+                                        {resource.author && (
+                                          <span>by {resource.author}</span>
+                                        )}
+                                        <span className="bg-sage/20 text-sage-dark px-2 py-1 rounded">
+                                          From activities
+                                        </span>
+                                      </div>
+                                      
+                                      {resource.description && (
+                                        <p className="text-gray-600 mt-3 text-sm">
+                                          {resource.description}
+                                        </p>
+                                      )}
+                                      
+                                      {resource.url && (
+                                        <a 
+                                          href={resource.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center space-x-1 text-sm text-sky-600 hover:text-sky-700 mt-2"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <span>View Resource</span>
+                                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                          </svg>
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-600 mb-4">No resources added yet</p>
+                <p className="text-gray-600 mb-4">No resources found</p>
+                <p className="text-sm text-gray-500 mb-6">Resources can be added directly to this goal or will appear here when added to activities.</p>
                 <Link
                   href={`/dashboard/goals/${goal.id}/resources/add`}
                   className="btn-primary inline-block"
                 >
-                  Add First Resource
+                  Add Direct Resource
                 </Link>
               </div>
             )}

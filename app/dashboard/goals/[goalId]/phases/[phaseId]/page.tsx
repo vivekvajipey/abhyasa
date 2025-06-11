@@ -56,23 +56,13 @@ export default async function PhasePage({
     redirect(`/dashboard/goals/${goalId}`)
   }
 
-  // Fetch resources associated with this phase
+  // Fetch aggregated resources for this phase using the new view
   const { data: phaseResources } = await supabase
-    .from('goal_resources')
-    .select(`
-      *,
-      resources (
-        id,
-        type,
-        title,
-        author,
-        url,
-        description,
-        metadata
-      )
-    `)
-    .eq('goal_id', goalId)
-    // phase_id doesn't exist in goal_resources
+    .rpc('get_phase_resources', { p_phase_id: phaseId })
+  
+  // Count total resources for this phase
+  const { data: resourceCount } = await supabase
+    .rpc('count_phase_resources', { p_phase_id: phaseId })
 
   // Fetch activity progress for the user
   const activityIds = phase.activities?.map((a: any) => a.id) || []
@@ -131,6 +121,7 @@ export default async function PhasePage({
     <PhaseClient 
       phase={{...phase, status: computedPhaseStatus}}
       phaseResources={phaseResources || []}
+      resourceCount={resourceCount || 0}
       activityProgress={progressMap}
       goalId={goalId}
       userId={user.id}

@@ -141,6 +141,14 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
     .eq('id', goalId)
     .eq('user_id', user.id)
     .single()
+  
+  // Fetch aggregated resources using the new view
+  const { data: aggregatedResources } = await supabase
+    .rpc('get_goal_resources', { p_goal_id: goalId })
+  
+  // Count total resources (including from activities)
+  const { data: resourceCount } = await supabase
+    .rpc('count_goal_resources', { p_goal_id: goalId })
 
   // Attach progress to activities
   const goalWithProgress = updatedGoal || goal
@@ -153,6 +161,10 @@ export default async function GoalPage({ params }: { params: Promise<{ goalId: s
       }
     })
   }
+  
+  // Add aggregated resources to goal object
+  goalWithProgress.aggregatedResources = aggregatedResources || []
+  goalWithProgress.totalResourceCount = resourceCount || 0
   
   return <GoalClient goal={goalWithProgress} />
 }
